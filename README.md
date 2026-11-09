@@ -80,3 +80,5 @@ From `backend/`: `mvn test`
 From `frontend/`: `npm ci` then `npm run build`
 
 GitHub Actions runs these checks on pushes and pull requests to `main`.
+
+For manual API checks, import [`postman/team-project-api.postman_collection.json`](postman/team-project-api.postman_collection.json) into Postman. Set the collection’s `email` and `password` variables locally, run Login or Register first, then run the project/task/issue requests in order. The token and created record IDs are saved as collection variables. Do not export or commit real credentials.

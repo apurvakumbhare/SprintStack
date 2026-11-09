@@ -1,0 +1,122 @@
+{
+  "info": {
+    "name": "Team Project Management API",
+    "description": "Manual requests for authentication, projects, members, tasks, issues, comments, analytics, activity, and notifications. Set the email and password variables locally before running requests. Login stores the JWT token automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "email", "value": "" },
+    { "key": "password", "value": "" },
+    { "key": "fullName", "value": "API Test User" },
+    { "key": "token", "value": "" },
+    { "key": "projectId", "value": "" },
+    { "key": "taskId", "value": "" },
+    { "key": "issueId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Check API health",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/health" }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201 || pm.response.code === 200) {", "  pm.collectionVariables.set('token', pm.response.json().token);", "}"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"fullName\": \"{{fullName}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/auth/register"
+          },
+          "auth": { "type": "noauth" }
+        },
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 200) {", "  pm.collectionVariables.set('token', pm.response.json().token);", "}"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/auth/login"
+          },
+          "auth": { "type": "noauth" }
+        },
+        { "name": "Current user", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/auth/me" } }
+      ]
+    },
+    {
+      "name": "Projects and members",
+      "item": [
+        { "name": "List projects", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/projects" } },
+        {
+          "name": "Create project",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201 || pm.response.code === 200) {", "  pm.collectionVariables.set('projectId', pm.response.json().id);", "}"] } }],
+          "request": {
+            "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"API project\",\n  \"description\": \"Created from the Postman collection\",\n  \"priority\": \"MEDIUM\",\n  \"startDate\": null,\n  \"dueDate\": null\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/projects"
+          }
+        },
+        { "name": "Project analytics", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/projects/{{projectId}}/analytics" } },
+        { "name": "List project members", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/projects/{{projectId}}/members" } },
+        { "name": "Search available members", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/projects/{{projectId}}/members/search?q=person" } }
+      ]
+    },
+    {
+      "name": "Tasks and comments",
+      "item": [
+        {
+          "name": "Create task with labels",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201 || pm.response.code === 200) {", "  pm.collectionVariables.set('taskId', pm.response.json().id);", "}"] } }],
+          "request": {
+            "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"API task\",\n  \"description\": \"Created from the Postman collection\",\n  \"assigneeId\": null,\n  \"priority\": \"MEDIUM\",\n  \"status\": \"TODO\",\n  \"startDate\": null,\n  \"dueDate\": null,\n  \"estimatedEffort\": 2,\n  \"labels\": [\"api\", \"manual-test\"]\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/projects/{{projectId}}/tasks"
+          }
+        },
+        { "name": "List project tasks", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/projects/{{projectId}}/tasks" } },
+        { "name": "Move task to in progress", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{baseUrl}}/tasks/{{taskId}}/status" } },
+        { "name": "Add task comment", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"body\": \"Progress update from Postman\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{baseUrl}}/tasks/{{taskId}}/comments" } },
+        { "name": "List task comments", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/tasks/{{taskId}}/comments" } }
+      ]
+    },
+    {
+      "name": "Issues and comments",
+      "item": [
+        {
+          "name": "Report issue",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201 || pm.response.code === 200) {", "  pm.collectionVariables.set('issueId', pm.response.json().id);", "}"] } }],
+          "request": {
+            "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"API issue\",\n  \"description\": \"Created from the Postman collection\",\n  \"assigneeId\": null,\n  \"severity\": \"MEDIUM\",\n  \"priority\": \"MEDIUM\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/projects/{{projectId}}/issues"
+          }
+        },
+        { "name": "List project issues", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/projects/{{projectId}}/issues" } },
+        { "name": "Resolve issue", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"RESOLVED\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{baseUrl}}/issues/{{issueId}}/status" } },
+        { "name": "Add issue comment", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"body\": \"Investigation note from Postman\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{baseUrl}}/issues/{{issueId}}/comments" } }
+      ]
+    },
+    {
+      "name": "Activity and notifications",
+      "item": [
+        { "name": "Project activity", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/projects/{{projectId}}/activity" } },
+        { "name": "List notifications", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/notifications" } },
+        { "name": "Unread count", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/notifications/unread-count" } },
+        { "name": "Mark all notifications read", "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/notifications/read-all" } }
+      ]
+    }
+  ]
+}
