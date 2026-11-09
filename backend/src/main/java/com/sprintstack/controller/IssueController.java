@@ -5,6 +5,7 @@ import com.sprintstack.dto.issue.IssueResponse;
 import com.sprintstack.dto.issue.IssueStatusRequest;
 import com.sprintstack.entity.IssueSeverity;
 import com.sprintstack.entity.IssueStatus;
+import com.sprintstack.entity.TaskPriority;
 import com.sprintstack.service.IssueService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -21,8 +22,9 @@ public class IssueController {
     public List<IssueResponse> list(Authentication authentication,@PathVariable Long projectId,
                                     @RequestParam(required=false) IssueStatus status,
                                     @RequestParam(required=false) IssueSeverity severity,
+                                    @RequestParam(required=false) TaskPriority priority,
                                     @RequestParam(required=false) String q){
-        return issues.list(authentication.getName(),projectId,status,severity,q);
+        return issues.list(authentication.getName(),projectId,status,severity,priority,q);
     }
     @PostMapping("/api/projects/{projectId}/issues")
     @ResponseStatus(HttpStatus.CREATED)

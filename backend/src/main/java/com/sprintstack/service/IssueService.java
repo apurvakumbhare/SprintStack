@@ -26,8 +26,13 @@ public class IssueService {
 
     @Transactional(readOnly=true)
     public List<IssueResponse> list(String email, Long projectId, IssueStatus status, IssueSeverity severity, String query) {
+        return list(email, projectId, status, severity, null, query);
+    }
+
+    @Transactional(readOnly=true)
+    public List<IssueResponse> list(String email, Long projectId, IssueStatus status, IssueSeverity severity, TaskPriority priority, String query) {
         Project project=projects.projectForMember(email,projectId);
-        return issues.searchProjectIssues(project.getId(),status,severity,query==null||query.isBlank()?null:query.trim())
+        return issues.searchProjectIssues(project.getId(),status,severity,priority,query==null||query.isBlank()?null:query.trim())
                 .stream().map(IssueResponse::from).toList();
     }
 
