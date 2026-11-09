@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.time.LocalDateTime;
 public interface NotificationRepository extends JpaRepository<Notification,Long>{
  List<Notification> findTop50ByUser_IdOrderByCreatedAtDesc(Long userId);
+ List<Notification> findTop5ByUser_IdOrderByCreatedAtDesc(Long userId);
  Optional<Notification> findByIdAndUser_Id(Long id,Long userId);
  long countByUser_IdAndReadFalse(Long userId);
  boolean existsByUser_IdAndTypeAndRelatedEntityIdAndCreatedAtAfter(Long userId,String type,Long entityId,LocalDateTime after);

@@ -11,6 +11,7 @@ import com.sprintstack.entity.ProjectMember;
 import com.sprintstack.repository.ProjectRepository;
 import com.sprintstack.repository.ActivityLogRepository;
 import com.sprintstack.repository.TaskRepository;
+import com.sprintstack.repository.NotificationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
@@ -23,9 +24,10 @@ public class DashboardService {
     private final ProjectRepository projects;
     private final TaskRepository tasks;
     private final ActivityLogRepository activity;
+    private final NotificationRepository notifications;
 
-    public DashboardService(ProjectService projectService, ProjectRepository projects, TaskRepository tasks, ActivityLogRepository activity) {
-        this.projectService=projectService; this.projects=projects; this.tasks=tasks; this.activity=activity;
+    public DashboardService(ProjectService projectService, ProjectRepository projects, TaskRepository tasks, ActivityLogRepository activity, NotificationRepository notifications) {
+        this.projectService=projectService; this.projects=projects; this.tasks=tasks; this.activity=activity; this.notifications=notifications;
     }
 
     @Transactional(readOnly = true)
@@ -67,7 +69,9 @@ public class DashboardService {
         List<Long> projectIds=visibleProjects.stream().map(Project::getId).toList();
         List<ActivityResponse> recentActivity=projectIds.isEmpty()?List.of():activity.findTop10ByProject_IdInOrderByCreatedAtDesc(projectIds)
                 .stream().map(ActivityResponse::from).toList();
+        List<com.sprintstack.dto.notification.NotificationResponse> recentNotifications=notifications.findTop5ByUser_IdOrderByCreatedAtDesc(user.getId())
+                .stream().map(com.sprintstack.dto.notification.NotificationResponse::from).toList();
         return new DashboardResponse(visibleProjects.size(), active, completedProjects, totalTasks, completedTasks,
-                totalTasks - completedTasks, overdue, dueSoon, statusMap, weeklyCompletion, teamWorkload, progress, recentActivity);
+                totalTasks - completedTasks, overdue, dueSoon, statusMap, weeklyCompletion, teamWorkload, progress, recentActivity, recentNotifications);
     }
 }
