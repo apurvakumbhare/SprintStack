@@ -100,6 +100,7 @@ class DatabaseMigrationTest {
         var issue=issues.create(owner.getEmail(),project.id(),new IssueRequest("Login fails","Steps to reproduce",developer.getId(),
                 com.sprintstack.entity.IssueSeverity.HIGH,com.sprintstack.entity.TaskPriority.HIGH,null));
         assertThat(notifications.countByUser_IdAndReadFalse(developer.getId())).isGreaterThanOrEqualTo(2);
+        assertThat(dashboard.summary(developer.getEmail()).recentNotifications()).extracting("type").contains("ISSUE_ASSIGNED");
 
         var comment=comments.addIssueComment(developer.getEmail(),issue.id(),new CommentRequest("I can reproduce this."));
         var denied=org.junit.jupiter.api.Assertions.assertThrows(ResponseStatusException.class,
