@@ -39,8 +39,9 @@ function TaskDialog({ projectId, onClose, onCreated }) {
 }
 
 export default function TasksPage({user}) {
-  const [searchParams]=useSearchParams()
+  const [searchParams,setSearchParams]=useSearchParams()
   const requestedProject=searchParams.get('project')
+  const requestedTask=searchParams.get('task')
   const [projects,setProjects]=useState([])
   const [projectId,setProjectId]=useState('')
   const [tasks,setTasks]=useState([])
@@ -59,6 +60,8 @@ export default function TasksPage({user}) {
   const [bulkStatus,setBulkStatus]=useState('COMPLETED')
   const [bulkBusy,setBulkBusy]=useState(false)
   useEffect(()=>{api.get('/projects').then(({data})=>{setProjects(data);if(data.length)setProjectId(String(data.find(p=>String(p.id)===requestedProject)?.id||data[0].id))}).catch(e=>setError(e.response?.status===401?'Sign in to see your tasks.':'Could not load projects. Check the API connection.')).finally(()=>setLoading(false))},[])
+  useEffect(()=>{if(!requestedTask)return;setQuery('');setStatus('ALL');setPriority('ALL');setMine(false);setOverdue(false);api.get(`/tasks/${requestedTask}`).then(({data})=>setProjectId(String(data.projectId))).catch(e=>setError(e.response?.data?.error||'Could not open this task.'))},[requestedTask])
+  useEffect(()=>{if(!requestedTask)return;const match=tasks.find(task=>String(task.id)===requestedTask);if(match){setSelectedTask(match);const params=new URLSearchParams(searchParams);params.delete('task');setSearchParams(params,{replace:true})}},[tasks,requestedTask])
   useEffect(()=>setSelectedIds(new Set()),[projectId])
   useEffect(()=>{if(!projectId)return;setLoading(true);api.get(`/projects/${projectId}/tasks`,{params:{q:query||undefined,status:status==='ALL'?undefined:status,priority:priority==='ALL'?undefined:priority,mine:mine||undefined,overdue:overdue||undefined}}).then(({data})=>setTasks(data)).catch(e=>setError(e.response?.data?.error||'Could not load tasks.')).finally(()=>setLoading(false))},[projectId,query,status,priority,mine,overdue])
   async function moveTask(taskId,nextStatus) {
