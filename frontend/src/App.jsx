@@ -28,8 +28,8 @@ const navigation = [
 
 function Sidebar({ user, onLogout }) {
   return <aside className="sidebar">
-    <Link className="brand" to="/" aria-label={`${APP_NAME} home`}><span className="brand-mark">S</span><span>{APP_NAME}</span></Link>
-    <div className="workspace"><span className="workspace-avatar">S</span><span className="workspace-copy"><b>Your workspace</b><small>Getting started</small></span><ChevronDown size={15}/></div>
+    <Link className="brand" to="/" aria-label={`${APP_NAME} home`}><span className="brand-mark">{APP_NAME.slice(0,1).toUpperCase()}</span><span>{APP_NAME}</span></Link>
+    <div className="workspace"><span className="workspace-avatar">{APP_NAME.slice(0,1).toUpperCase()}</span><span className="workspace-copy"><b>Your workspace</b><small>Getting started</small></span><ChevronDown size={15}/></div>
     <div className="nav-label">WORKSPACE</div>
     <nav className="nav-list">{navigation.map(({label,to,icon:Icon})=><NavLink key={to} to={to} end={to==='/'} className={({isActive})=>`nav-item ${isActive?'active':''}`}><Icon size={18}/><span>{label}</span></NavLink>)}</nav>
     <div className="nav-label team-label">TEAM</div>
@@ -54,10 +54,6 @@ function EmptyDashboard({health, user, summary, summaryError}) {
     {user&&summary&&<section className="dashboard-activity" id="dashboard-activity"><div className="section-title"><div><div className="eyebrow">WORKSPACE HISTORY</div><h2>Recent activity</h2></div><Activity size={16}/></div>{summary.recentActivity?.length?summary.recentActivity.map(item=><article className="dashboard-activity-row" key={item.id}><span className="activity-avatar">{item.userName.slice(0,1).toUpperCase()}</span><div><p><b>{item.userName}</b> {item.description}</p><small>{item.projectName||'Workspace'} · {new Date(item.createdAt).toLocaleString()}</small></div></article>):<p className="dashboard-activity-empty">Project updates will appear here as your team works.</p>}</section>}
     <footer className="footer"><span>Made for teams that get things done.</span><span>{APP_NAME} <span className="footer-dot">·</span> v0.1</span></footer>
   </div>
-}
-
-function PlaceholderPage({title}) {
-  return <div className="page-content"><div className="eyebrow">WORKSPACE</div><h1>{title}</h1><p className="placeholder-copy">This area is being built as part of the SprintStack project.</p><div className="placeholder-panel"><span className="card-icon violet"><FolderKanban size={18}/></span><div><b>Coming up next</b><p>Project and task data will appear here once the API and database modules are in place.</p></div></div></div>
 }
 
 function ProtectedRoute({ user, loading, children }) {
@@ -89,6 +85,7 @@ export default function App() {
   const navigate = useNavigate()
   const location = useLocation()
   useEffect(()=>{api.get('/health').then(()=>setHealth('online')).catch(()=>setHealth('offline'))},[])
+  useEffect(()=>{document.title=APP_NAME;document.querySelector('meta[name="description"]')?.setAttribute('content',`${APP_NAME} — team project and productivity management.`)},[])
   useEffect(()=>{const token=sessionStorage.getItem('sprintstack.token');if(!token){setAuthLoading(false);return}api.get('/auth/me').then(({data})=>{setUser(data);sessionStorage.setItem('sprintstack.email',data.email)}).catch(()=>{sessionStorage.removeItem('sprintstack.token');sessionStorage.removeItem('sprintstack.email')}).finally(()=>setAuthLoading(false))},[])
   useEffect(()=>{const onExpired=()=>{setUser(null);setSummary(null);setAuthLoading(false);navigate('/login',{replace:true})};window.addEventListener('sprintstack:session-expired',onExpired);return()=>window.removeEventListener('sprintstack:session-expired',onExpired)},[navigate])
   useEffect(()=>{if(!user){setSummary(null);return} api.get('/dashboard').then(({data})=>{setSummary(data);setSummaryError('')}).catch(e=>setSummaryError(e.response?.data?.error||'Dashboard data could not be loaded.'))},[user,location.pathname])
