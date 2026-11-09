@@ -14,6 +14,7 @@ import com.sprintstack.repository.UserRepository;
 import com.sprintstack.service.ProjectService;
 import com.sprintstack.service.TaskService;
 import com.sprintstack.service.DashboardService;
+import com.sprintstack.service.ProjectAnalyticsService;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
@@ -33,6 +34,7 @@ class DatabaseMigrationTest {
     @Autowired private ProjectService projects;
     @Autowired private TaskService tasks;
     @Autowired private DashboardService dashboard;
+    @Autowired private ProjectAnalyticsService analytics;
 
     @Test
     void migrationsCreateTheCoreTablesAndVersionHistory() {
@@ -55,12 +57,19 @@ class DatabaseMigrationTest {
                 ()->projects.get(outsider.getEmail(),project.id())).getStatusCode().value()).isEqualTo(403);
         var task=tasks.create(owner.getEmail(),project.id(),new TaskRequest("Ship feature","Work item",null,null,null,null,null,null,List.of("backend")));
         tasks.changeStatus(owner.getEmail(),task.id(),TaskStatus.COMPLETED);
+        tasks.create(owner.getEmail(),project.id(),new TaskRequest("Review docs",null,owner.getId(),null,null,null,null,null,List.of()));
         var summary=dashboard.summary(owner.getEmail());
         assertThat(summary.totalProjects()).isEqualTo(1);
-        assertThat(summary.totalTasks()).isEqualTo(1);
+        assertThat(summary.totalTasks()).isEqualTo(2);
         assertThat(summary.completedTasks()).isEqualTo(1);
         assertThat(summary.taskStatusCounts().get("COMPLETED")).isEqualTo(1L);
-        assertThat(summary.projectProgress().getFirst().completionPercent()).isEqualTo(100);
+        assertThat(summary.projectProgress().getFirst().completionPercent()).isEqualTo(50);
         assertThat(task.labels()).containsExactly("backend");
+        var projectSummary=analytics.summary(owner.getEmail(),project.id());
+        assertThat(projectSummary.totalTasks()).isEqualTo(2);
+        assertThat(projectSummary.pendingTasks()).isEqualTo(1);
+        assertThat(projectSummary.completionPercent()).isEqualTo(50);
+        assertThat(projectSummary.tasksByPriority().get("MEDIUM")).isEqualTo(2L);
+        assertThat(projectSummary.teamWorkload().getFirst().openAssignedTasks()).isEqualTo(1L);
     }
 }

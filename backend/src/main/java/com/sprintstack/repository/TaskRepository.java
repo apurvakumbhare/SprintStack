@@ -21,6 +21,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     long countByProject_IdAndStatus(Long projectId, TaskStatus status);
     long countByProject_IdAndAssignee_Id(Long projectId, Long assigneeId);
     long countByProject_IdAndAssignee_IdAndStatusNot(Long projectId, Long assigneeId, TaskStatus status);
+    List<Task> findAllByProject_Id(Long projectId);
     List<Task> findAllByDueDateAndAssigneeIsNotNullAndStatusNot(LocalDate dueDate,TaskStatus status);
     List<Task> findAllByDueDateBeforeAndAssigneeIsNotNullAndStatusNot(LocalDate date,TaskStatus status);
 
