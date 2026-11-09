@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { LoaderCircle, Search, Users } from 'lucide-react'
+import { Download, LoaderCircle, Search, Users } from 'lucide-react'
 import api from '../lib/api'
+import { downloadCsv } from '../lib/csv'
 
 export default function MembersPage() {
   const [projects, setProjects] = useState([])
@@ -27,7 +28,7 @@ export default function MembersPage() {
   return <div className="page-content data-page">
     <div className="page-heading"><div><div className="eyebrow">YOUR COLLABORATORS</div><h1>Members</h1><p>People and roles across the projects you can access.</p></div></div>
     <div className="member-summary"><span><b>{uniqueMembers}</b> {uniqueMembers === 1 ? 'person' : 'people'}</span><span><b>{projects.length}</b> {projects.length === 1 ? 'project' : 'projects'}</span></div>
-    <div className="members-toolbar"><div className="search-field"><Search size={16}/><input aria-label="Search members" placeholder="Search people or projects…" value={query} onChange={event => setQuery(event.target.value)}/></div></div>
+    <div className="members-toolbar"><div className="search-field"><Search size={16}/><input aria-label="Search members" placeholder="Search people or projects…" value={query} onChange={event => setQuery(event.target.value)}/></div><button className="button button-light" disabled={!visible.length} onClick={()=>downloadCsv('project-members.csv',['Name','Email','Role','Project'],visible.map(member=>[member.fullName,member.email,member.role,member.projectName]))}><Download size={15}/> Export CSV</button></div>
     {error && <div className="inline-error" role="alert">{error}</div>}
     {loading ? <div className="loading-state"><LoaderCircle className="spinner" size={18}/> Loading members…</div>
       : visible.length ? <section className="member-directory" aria-label="Project members">{visible.map(member => <article className="directory-member" key={`${member.projectId}-${member.id}`}>
