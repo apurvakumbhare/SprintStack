@@ -92,7 +92,7 @@ public class TaskService {
         }
         List<Task> selected = taskIds.stream().map(this::taskById).toList();
         if (selected.stream().anyMatch(task -> !task.getProject().getId().equals(projectId))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "All selected tasks must belong to this project");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found");
         }
         return selected.stream().map(task -> changeStatus(actor, task, status)).toList();
     }
