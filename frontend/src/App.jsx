@@ -1,0 +1,71 @@
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import {
+  Activity, ChevronDown, CircleHelp, ClipboardCheck, FolderKanban,
+  LayoutDashboard, ListTodo, Search, Settings, ShieldAlert, Users,
+} from 'lucide-react'
+import api from './lib/api'
+import { APP_NAME } from './lib/branding'
+import AuthPage from './pages/AuthPage'
+import ProjectsPage from './pages/ProjectsPage'
+import TasksPage from './pages/TasksPage'
+import IssuesPage from './pages/IssuesPage'
+import ProjectDetailPage from './pages/ProjectDetailPage'
+import SettingsPage from './pages/SettingsPage'
+import NotificationsMenu from './components/NotificationsMenu'
+const DashboardCharts = lazy(() => import('./components/DashboardCharts'))
+
+const navigation = [
+  { label: 'Overview', to: '/', icon: LayoutDashboard },
+  { label: 'Projects', to: '/projects', icon: FolderKanban },
+  { label: 'My tasks', to: '/tasks', icon: ListTodo },
+  { label: 'Issues', to: '/issues', icon: ShieldAlert },
+]
+
+function Sidebar({ user, onLogout }) {
+  return <aside className="sidebar">
+    <Link className="brand" to="/" aria-label={`${APP_NAME} home`}><span className="brand-mark">S</span><span>{APP_NAME}</span></Link>
+    <div className="workspace"><span className="workspace-avatar">S</span><span className="workspace-copy"><b>Your workspace</b><small>Getting started</small></span><ChevronDown size={15}/></div>
+    <div className="nav-label">WORKSPACE</div>
+    <nav className="nav-list">{navigation.map(({label,to,icon:Icon})=><NavLink key={to} to={to} end={to==='/'} className={({isActive})=>`nav-item ${isActive?'active':''}`}><Icon size={18}/><span>{label}</span></NavLink>)}</nav>
+    <div className="nav-label team-label">TEAM</div>
+    <a className="nav-item disabled" href="#team" aria-disabled="true"><Users size={18}/><span>Members</span></a>
+    <a className="nav-item disabled" href="#activity" aria-disabled="true"><Activity size={18}/><span>Activity</span></a>
+    <div className="sidebar-bottom"><a className="nav-item" href="#help"><CircleHelp size={18}/><span>Help & support</span></a><NavLink className={({isActive})=>isActive?'nav-item active':'nav-item'} to="/settings"><Settings size={18}/><span>Settings</span></NavLink>{user ? <div className="profile"><span className="profile-avatar">{user.fullName?.slice(0,1).toUpperCase()}</span><span className="profile-copy"><b>{user.fullName}</b><small>{user.role?.replaceAll('_',' ')}</small></span><button className="icon-button" aria-label="Sign out" title="Sign out" onClick={onLogout}><ChevronDown size={16}/></button></div> : <div className="profile"><span className="profile-avatar">?</span><span className="profile-copy"><b>Not signed in</b><small>Account setup pending</small></span></div>}</div>
+  </aside>
+}
+
+function EmptyDashboard({health, user, summary, summaryError}) {
+  return <div className="page-content">
+    <div className="page-heading"><div><div className="eyebrow">TEAM PROJECTS & PRODUCTIVITY</div><h1>{user ? `Welcome, ${user.fullName}` : `Welcome to ${APP_NAME}`} <span className="wave">✦</span></h1><p>Bring your projects, tasks, and team into one place.</p></div><button className="button button-light"><Activity size={16}/> Activity log</button></div>
+    <div className="connect-banner"><span className={`status-dot ${health==='online'?'online':''}`}></span><div><b>{health==='online'?'API connected':`${APP_NAME} is ready to get started`}</b><p>{health==='online'?'Your workspace service is responding.':'Create your first project to bring your team and tasks together.'}</p></div><span className="banner-tag">{health==='online'?'LIVE':'WORKSPACE'}</span></div>
+    {user&&summary&&<section className="metric-grid" aria-label="Workspace statistics"><article><span>Total projects</span><b>{summary.totalProjects}</b><small>{summary.activeProjects} active</small></article><article><span>Total tasks</span><b>{summary.totalTasks}</b><small>{summary.pendingTasks} still open</small></article><article><span>Completed tasks</span><b>{summary.completedTasks}</b><small>Across your projects</small></article><article><span>Due in 7 days</span><b>{summary.dueSoonTasks}</b><small>Open tasks approaching</small></article><article><span>Overdue tasks</span><b className={summary.overdueTasks?'metric-alert':''}>{summary.overdueTasks}</b><small>Past their due date</small></article></section>}
+    {user&&summary&&<Suspense fallback={<div className="chart-loading">Loading analytics…</div>}><DashboardCharts summary={summary}/></Suspense>}
+    {summaryError&&<div className="inline-error" role="alert">{summaryError}</div>}
+    <section className="overview-grid" aria-label="Workspace overview">
+      <article className="overview-card"><div className="card-top"><span className="card-icon violet"><FolderKanban size={18}/></span><span className="card-note">Your workspace</span></div><h2>Projects</h2><p>Organize work into focused projects and invite your teammates.</p><NavLink className="text-button" to="/projects">Explore projects <span>→</span></NavLink></article>
+      <article className="overview-card"><div className="card-top"><span className="card-icon blue"><ClipboardCheck size={18}/></span><span className="card-note">Stay on track</span></div><h2>Tasks</h2><p>Plan, assign, and follow work from start to done.</p><NavLink className="text-button" to="/tasks">Explore tasks <span>→</span></NavLink></article>
+      <article className="overview-card"><div className="card-top"><span className="card-icon orange"><ShieldAlert size={18}/></span><span className="card-note">Keep quality high</span></div><h2>Issues</h2><p>Track bugs and follow every fix through to resolution.</p><NavLink className="text-button" to="/issues">Explore issues <span>→</span></NavLink></article>
+    </section>
+    {summary?.projectProgress?.length>0?<section className="progress-section"><div className="section-title"><div><div className="eyebrow">YOUR WORK</div><h2>Project progress</h2></div><Link className="text-button" to="/projects">All projects <span>→</span></Link></div><div className="progress-list">{summary.projectProgress.slice(0,5).map(project=><article className="progress-row" key={project.id}><div className="progress-name"><span className="progress-project-icon"><FolderKanban size={15}/></span><div><b>{project.name}</b><small>{project.totalTasks} tasks · {project.status.toLowerCase().replace('_',' ')}</small></div></div><div className="progress-bar"><i style={{width:`${project.completionPercent}%`}}/></div><b className="progress-value">{project.completionPercent}%</b></article>)}</div></section>:<section className="setup-card"><div className="setup-illustration"><div className="setup-tile tile-one"><FolderKanban size={22}/></div><div className="setup-tile tile-two"><ListTodo size={20}/></div><div className="setup-tile tile-three"><Users size={20}/></div><div className="setup-orbit"></div></div><div className="setup-copy"><div className="eyebrow">YOUR NEXT STEP</div><h2>Set up your workspace</h2><p>Create your first project, add teammates who already have accounts, and start planning tasks in your workspace.</p><Link className="button button-primary" to={user?'/projects':'/register'}><span>＋</span> {user?'Create a project':'Create your account'}</Link></div><div className="setup-progress"><span>01</span><i></i><span>02</span><i></i><span>03</span></div></section>}
+    <footer className="footer"><span>Made for teams that get things done.</span><span>{APP_NAME} <span className="footer-dot">·</span> v0.1</span></footer>
+  </div>
+}
+
+function PlaceholderPage({title}) {
+  return <div className="page-content"><div className="eyebrow">WORKSPACE</div><h1>{title}</h1><p className="placeholder-copy">This area is being built as part of the SprintStack project.</p><div className="placeholder-panel"><span className="card-icon violet"><FolderKanban size={18}/></span><div><b>Coming up next</b><p>Project and task data will appear here once the API and database modules are in place.</p></div></div></div>
+}
+
+export default function App() {
+  const [health,setHealth] = useState('checking')
+  const [user,setUser] = useState(null)
+  const [summary,setSummary] = useState(null)
+  const [summaryError,setSummaryError] = useState('')
+  const navigate = useNavigate()
+  const location = useLocation()
+  useEffect(()=>{api.get('/health').then(()=>setHealth('online')).catch(()=>setHealth('offline'))},[])
+  useEffect(()=>{if(sessionStorage.getItem('sprintstack.token')) api.get('/auth/me').then(({data})=>{setUser(data);sessionStorage.setItem('sprintstack.email',data.email)}).catch(()=>{sessionStorage.removeItem('sprintstack.token');sessionStorage.removeItem('sprintstack.email')})},[])
+  useEffect(()=>{if(!user){setSummary(null);return} api.get('/dashboard').then(({data})=>{setSummary(data);setSummaryError('')}).catch(e=>setSummaryError(e.response?.data?.error||'Dashboard data could not be loaded.'))},[user,location.pathname])
+  function logout() { sessionStorage.removeItem('sprintstack.token'); sessionStorage.removeItem('sprintstack.email'); setUser(null); navigate('/login') }
+  return <Routes><Route path="/login" element={<AuthPage mode="login" onAuthenticated={setUser}/>}/><Route path="/register" element={<AuthPage mode="register" onAuthenticated={setUser}/>}/><Route path="*" element={<div className="app-shell"><Sidebar user={user} onLogout={logout}/><main className="main-area"><header className="topbar"><div className="breadcrumbs"><span>Workspace</span><b>/</b><strong>Overview</strong></div><div className="top-actions"><button className="icon-button search-button" aria-label="Search"><Search size={18}/><span>Search</span><kbd>⌘ K</kbd></button><span className="top-divider"></span><NotificationsMenu user={user}/>{user ? <span className="top-avatar">{user.fullName?.slice(0,1).toUpperCase()}</span> : <Link className="text-button" to="/login">Sign in</Link>}</div></header><Routes><Route path="/" element={<EmptyDashboard health={health} user={user} summary={summary} summaryError={summaryError}/>}/><Route path="/projects" element={<ProjectsPage/>}/><Route path="/projects/:projectId" element={<ProjectDetailPage/>}/><Route path="/tasks" element={<TasksPage user={user}/>}/><Route path="/issues" element={<IssuesPage user={user}/>}/><Route path="/settings" element={<SettingsPage user={user} onUserUpdated={setUser}/>}/></Routes></main></div>}/></Routes>
+}

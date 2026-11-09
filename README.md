@@ -1,0 +1,81 @@
+# SprintStack
+
+SprintStack is a full-stack team productivity app for projects, memberships, tasks, issue tracking, comments, notifications, activity history, and database-backed delivery analytics. The display name is configured separately so it can be changed to KKH later without changing the repository identity.
+
+## Stack
+
+- Frontend: React 18, JavaScript, Vite, Tailwind CSS, React Router, Axios, Lucide, Recharts
+- Backend: Java 21, Spring Boot 3, Spring Security, Spring Data JPA, Bean Validation, Flyway, Maven
+- Database: MySQL 8
+
+No Docker, Kubernetes, Swagger/OpenAPI, microservices, Firebase, or TypeScript are used.
+
+## Prerequisites
+
+- Java 21
+- Maven 3.9+
+- Node.js 20+ and npm
+- MySQL 8
+
+## Local setup
+
+1. Create a MySQL database named `sprintstack`.
+2. From `backend/`, set the environment and start Spring Boot:
+
+   ```powershell
+   $env:DB_URL = 'jdbc:mysql://localhost:3306/sprintstack?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC'
+   $env:DB_USERNAME = 'root'
+   $env:DB_PASSWORD = 'your-local-password'
+   $env:JWT_SECRET = 'replace-with-a-random-secret-of-at-least-32-characters'
+   mvn spring-boot:run
+   ```
+
+   Flyway creates the schema and Hibernate validates it. Set `FRONTEND_URL` if the Vite app uses a different origin (default `http://localhost:5173`).
+
+3. In another terminal, from `frontend/`:
+
+   ```powershell
+   npm ci
+   npm run dev
+   ```
+
+4. Open `http://localhost:5173`. The API health endpoint is `http://localhost:8080/api/health`.
+
+Vite reads `VITE_API_URL` and `VITE_APP_NAME` at build time. Put local values in `frontend/.env.local`; the default display name is SprintStack. Spring reads `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `SERVER_PORT`, `FRONTEND_URL`, `JWT_SECRET`, and `JWT_EXPIRATION_MS`. `.env.example` contains placeholders only; do not commit credentials.
+
+## Implemented features
+
+- Registration, login, BCrypt passwords, stateless JWT security, profile editing, password changes, client logout, and protected API routes.
+- Project create, read, update, archive; per-project roles; existing-user search, membership changes, and ownership transfer.
+- Task CRUD, assignment, status and priority filtering, search, “mine” and overdue views, Kanban status updates, deadlines, effort, and comments.
+- Issue reporting, assignment, severity/status tracking, issue comments, and project issue lists.
+- Activity feeds, database notifications with unread count/read actions, and scheduled due-date/overdue reminders.
+- Dashboard metrics, task-state distribution, project completion, weekly completion, and open assigned-task workload, all computed from database data.
+- Flyway schema migrations, API validation/error handling, integration and unit tests, and GitHub Actions checks.
+
+Project labels are not yet exposed in the task workflow, email invitations are intentionally not faked, and a live MySQL instance was not available during automated local verification; H2 MySQL-mode is used for migration and persistence integration tests.
+
+## API overview
+
+All paths below are prefixed with `/api`.
+
+| Area | Paths | Access |
+| --- | --- | --- |
+| Health | `GET /health` | Public |
+| Authentication | `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `PATCH /auth/profile`, `PUT /auth/password` | Register/login public; others authenticated |
+| Dashboard | `GET /dashboard` | Authenticated |
+| Projects | `/projects` and `/projects/{id}` | Authenticated; membership and project-role checks |
+| Members | `/projects/{id}/members` and nested search/role/owner routes | Authenticated; project-role checks |
+| Tasks | `/projects/{id}/tasks`, `/tasks/{id}`, `/tasks/{id}/status` | Authenticated; membership/assignment checks |
+| Issues | `/projects/{id}/issues`, `/issues/{id}`, `/issues/{id}/status` | Authenticated; membership checks |
+| Comments | `/tasks/{id}/comments`, `/issues/{id}/comments` | Authenticated; authors manage their own comments |
+| Activity | `/projects/{id}/activity` | Project members |
+| Notifications | `/notifications`, `/notifications/unread-count`, `/notifications/{id}/read`, `/notifications/read-all` | Authenticated owner |
+
+## Verification
+
+From `backend/`: `mvn test`
+
+From `frontend/`: `npm ci` then `npm run build`
+
+GitHub Actions runs these checks on pushes and pull requests to `main`.
