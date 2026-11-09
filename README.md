@@ -46,10 +46,10 @@ Vite reads `VITE_API_URL` and `VITE_APP_NAME` at build time. Put local values in
 ## Implemented features
 
 - Registration, login, BCrypt passwords, stateless JWT security, profile editing, password changes, client logout, and protected API routes.
-- Project create, read, update, archive; per-project roles; existing-user search, membership changes, ownership transfer, and a searchable member directory.
-- Task CRUD, assignment, status and priority filtering, search, “mine” and overdue views, Kanban and bulk status updates, labels, deadlines, effort, comments, and filtered CSV export.
-- Issue reporting with assignment, severity/status tracking, issue comments, project issue lists, and filtered CSV export.
-- Project and workspace activity feeds, recent dashboard activity, database notifications with unread count/read actions, and scheduled due-date/overdue reminders.
+- Project create, read, update, archive; per-project roles; existing-user search, membership changes, ownership transfer, member workload summaries, and a searchable member directory.
+- Task CRUD, assignment, status and priority filtering, search, deadline/priority sorting, “mine” and overdue views, Kanban and bulk status updates, labels, effort, comments, and filtered CSV export.
+- Issue reporting with assignment, severity/status/priority filtering, search, issue comments, project issue lists, and filtered CSV export.
+- Project and workspace activity feeds, recent dashboard activity and notifications, database-backed notification links/read actions, and scheduled due-date/overdue reminders.
 - Keyboard task search (Ctrl/Cmd+K), in-app help, and CSV export for member listings.
 - Dashboard metrics, task-state distribution, project completion, weekly completion, open assigned-task workload, and project-level task/issue/team analytics, all computed from database data.
 - Flyway schema migrations, API validation/error handling, integration and unit tests, and GitHub Actions checks.
@@ -68,8 +68,8 @@ All paths below are prefixed with `/api`.
 | Projects | `/projects` and `/projects/{id}` | Authenticated; membership and project-role checks |
 | Project analytics | `GET /projects/{id}/analytics` | Authenticated project members |
 | Members | `/projects/{id}/members` and nested search/role/owner routes | Authenticated; project-role checks |
-| Tasks | `/projects/{id}/tasks`, `/projects/{id}/tasks/status`, `/tasks/{id}`, `/tasks/{id}/status` | Authenticated; membership/assignment checks; bulk status changes accept at most 50 task IDs from one project |
-| Issues | `/projects/{id}/issues`, `/issues/{id}`, `/issues/{id}/status` | Authenticated; membership checks |
+| Tasks | `/projects/{id}/tasks`, `/projects/{id}/tasks/status`, `GET/PUT/DELETE /tasks/{id}`, `/tasks/{id}/status` | Authenticated; membership/assignment checks; bulk status changes accept at most 50 task IDs from one project |
+| Issues | `/projects/{id}/issues`, `GET/PUT /issues/{id}`, `/issues/{id}/status` | Authenticated; membership checks; project issue queries support status, severity, priority, and text filters |
 | Comments | `/tasks/{id}/comments`, `/issues/{id}/comments` | Authenticated; authors manage their own comments |
 | Activity | `/activity`, `/projects/{id}/activity` | Authenticated workspace members; activity is limited to projects the caller can access |
 | Notifications | `/notifications`, `/notifications/unread-count`, `/notifications/{id}/read`, `/notifications/read-all` | Authenticated owner |
