@@ -5,4 +5,5 @@ import java.util.List;
 public interface ActivityLogRepository extends JpaRepository<ActivityLog,Long>{
     List<ActivityLog> findTop50ByProject_IdOrderByCreatedAtDesc(Long projectId);
     List<ActivityLog> findTop10ByProject_IdInOrderByCreatedAtDesc(List<Long> projectIds);
+    List<ActivityLog> findTop100ByProject_IdInOrderByCreatedAtDesc(List<Long> projectIds);
 }
