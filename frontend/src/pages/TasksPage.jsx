@@ -63,7 +63,7 @@ export default function TasksPage({user}) {
   useEffect(()=>{if(!requestedTask)return;setQuery('');setStatus('ALL');setPriority('ALL');setMine(false);setOverdue(false);api.get(`/tasks/${requestedTask}`).then(({data})=>setProjectId(String(data.projectId))).catch(e=>setError(e.response?.data?.error||'Could not open this task.'))},[requestedTask])
   useEffect(()=>{if(!requestedTask)return;const match=tasks.find(task=>String(task.id)===requestedTask);if(match){setSelectedTask(match);const params=new URLSearchParams(searchParams);params.delete('task');setSearchParams(params,{replace:true})}},[tasks,requestedTask])
   useEffect(()=>setSelectedIds(new Set()),[projectId])
-  useEffect(()=>{if(!projectId)return;setLoading(true);api.get(`/projects/${projectId}/tasks`,{params:{q:query||undefined,status:status==='ALL'?undefined:status,priority:priority==='ALL'?undefined:priority,mine:mine||undefined,overdue:overdue||undefined}}).then(({data})=>setTasks(data)).catch(e=>setError(e.response?.data?.error||'Could not load tasks.')).finally(()=>setLoading(false))},[projectId,query,status,priority,mine,overdue])
+  useEffect(()=>{if(!projectId)return;setLoading(true);api.get(`/projects/${projectId}/tasks`,{params:{q:query||undefined,status:status==='ALL'?undefined:status,priority:priority==='ALL'?undefined:priority,mine:mine||undefined,overdue:overdue||undefined}}).then(({data})=>{setTasks(data);setError('')}).catch(e=>setError(e.response?.data?.error||'Could not load tasks.')).finally(()=>setLoading(false))},[projectId,query,status,priority,mine,overdue])
   async function moveTask(taskId,nextStatus) {
     const previous=tasks
     setTasks(items=>items.map(task=>task.id===taskId?{...task,status:nextStatus}:task))
