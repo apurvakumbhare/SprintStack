@@ -49,7 +49,7 @@ Vite reads `VITE_API_URL` and `VITE_APP_NAME` at build time. Put local values in
 - Project create, read, update, archive; per-project roles; existing-user search, membership changes, and ownership transfer.
 - Task CRUD, assignment, status and priority filtering, search, “mine” and overdue views, Kanban status updates, labels, deadlines, effort, and comments.
 - Issue reporting, assignment, severity/status tracking, issue comments, and project issue lists.
-- Activity feeds, database notifications with unread count/read actions, and scheduled due-date/overdue reminders.
+- Project activity feeds, recent dashboard activity, database notifications with unread count/read actions, and scheduled due-date/overdue reminders.
 - Dashboard metrics, task-state distribution, project completion, weekly completion, open assigned-task workload, and project-level task/issue/team analytics, all computed from database data.
 - Flyway schema migrations, API validation/error handling, integration and unit tests, and GitHub Actions checks.
 
