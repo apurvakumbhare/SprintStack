@@ -32,7 +32,7 @@ export default function TasksPage({user}) {
   const [projects,setProjects]=useState([])
   const [projectId,setProjectId]=useState('')
   const [tasks,setTasks]=useState([])
-  const [query,setQuery]=useState('')
+  const [query,setQuery]=useState(()=>searchParams.get('q')||'')
   const [status,setStatus]=useState('ALL')
   const [priority,setPriority]=useState('ALL')
   const [mine,setMine]=useState(false)

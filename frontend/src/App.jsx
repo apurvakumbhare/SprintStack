@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import {
   Activity, ChevronDown, CircleHelp, ClipboardCheck, FolderKanban,
@@ -63,18 +63,34 @@ function ProtectedRoute({ user, loading, children }) {
   return user ? children : <Navigate to="/login" state={{ from: location }} replace />
 }
 
+function QuickSearch({ onClose, onSearch }) {
+  const [query, setQuery] = useState('')
+  const inputRef = useRef(null)
+  useEffect(() => { inputRef.current?.focus() }, [])
+  return <div className="quick-search-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
+    <form className="quick-search-dialog" role="dialog" aria-modal="true" aria-labelledby="quick-search-title" onSubmit={event => { event.preventDefault(); onSearch(query) }}>
+      <label id="quick-search-title" htmlFor="quick-search-input">Search tasks</label>
+      <div className="quick-search-input"><Search size={17}/><input ref={inputRef} id="quick-search-input" value={query} onChange={event => setQuery(event.target.value)} placeholder="Type a task title, label, or detail…"/><kbd>ESC</kbd></div>
+      <p>Search across tasks you can access.</p>
+    </form>
+  </div>
+}
+
 export default function App() {
   const [health,setHealth] = useState('checking')
   const [user,setUser] = useState(null)
   const [authLoading,setAuthLoading] = useState(Boolean(sessionStorage.getItem('sprintstack.token')))
   const [summary,setSummary] = useState(null)
   const [summaryError,setSummaryError] = useState('')
+  const [searchOpen,setSearchOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   useEffect(()=>{api.get('/health').then(()=>setHealth('online')).catch(()=>setHealth('offline'))},[])
   useEffect(()=>{const token=sessionStorage.getItem('sprintstack.token');if(!token){setAuthLoading(false);return}api.get('/auth/me').then(({data})=>{setUser(data);sessionStorage.setItem('sprintstack.email',data.email)}).catch(()=>{sessionStorage.removeItem('sprintstack.token');sessionStorage.removeItem('sprintstack.email')}).finally(()=>setAuthLoading(false))},[])
   useEffect(()=>{const onExpired=()=>{setUser(null);setSummary(null);setAuthLoading(false);navigate('/login',{replace:true})};window.addEventListener('sprintstack:session-expired',onExpired);return()=>window.removeEventListener('sprintstack:session-expired',onExpired)},[navigate])
   useEffect(()=>{if(!user){setSummary(null);return} api.get('/dashboard').then(({data})=>{setSummary(data);setSummaryError('')}).catch(e=>setSummaryError(e.response?.data?.error||'Dashboard data could not be loaded.'))},[user,location.pathname])
+  useEffect(()=>{const onKeyDown=event=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();setSearchOpen(true)}if(event.key==='Escape')setSearchOpen(false)};window.addEventListener('keydown',onKeyDown);return()=>window.removeEventListener('keydown',onKeyDown)},[])
   function logout() { sessionStorage.removeItem('sprintstack.token'); sessionStorage.removeItem('sprintstack.email'); setUser(null); navigate('/login') }
-  return <Routes><Route path="/login" element={<AuthPage mode="login" onAuthenticated={setUser}/>}/><Route path="/register" element={<AuthPage mode="register" onAuthenticated={setUser}/>}/><Route path="*" element={<div className="app-shell"><Sidebar user={user} onLogout={logout}/><main className="main-area"><header className="topbar"><div className="breadcrumbs"><span>Workspace</span><b>/</b><strong>Overview</strong></div><div className="top-actions"><button className="icon-button search-button" aria-label="Search"><Search size={18}/><span>Search</span><kbd>⌘ K</kbd></button><span className="top-divider"></span><NotificationsMenu user={user}/>{user ? <span className="top-avatar">{user.fullName?.slice(0,1).toUpperCase()}</span> : <Link className="text-button" to="/login">Sign in</Link>}</div></header><Routes><Route path="/" element={<EmptyDashboard health={health} user={user} summary={summary} summaryError={summaryError}/>}/><Route path="/projects" element={<ProtectedRoute user={user} loading={authLoading}><ProjectsPage/></ProtectedRoute>}/><Route path="/projects/:projectId" element={<ProtectedRoute user={user} loading={authLoading}><ProjectDetailPage/></ProtectedRoute>}/><Route path="/tasks" element={<ProtectedRoute user={user} loading={authLoading}><TasksPage user={user}/></ProtectedRoute>}/><Route path="/issues" element={<ProtectedRoute user={user} loading={authLoading}><IssuesPage user={user}/></ProtectedRoute>}/><Route path="/settings" element={<ProtectedRoute user={user} loading={authLoading}><SettingsPage user={user} onUserUpdated={setUser}/></ProtectedRoute>}/></Routes></main></div>}/></Routes>
+  function searchTasks(query) { setSearchOpen(false); navigate(`/tasks${query.trim()?`?q=${encodeURIComponent(query.trim())}`:''}`) }
+  return <><Routes><Route path="/login" element={<AuthPage mode="login" onAuthenticated={setUser}/>}/><Route path="/register" element={<AuthPage mode="register" onAuthenticated={setUser}/>}/><Route path="*" element={<div className="app-shell"><Sidebar user={user} onLogout={logout}/><main className="main-area"><header className="topbar"><div className="breadcrumbs"><span>Workspace</span><b>/</b><strong>Overview</strong></div><div className="top-actions"><button className="icon-button search-button" aria-label="Search tasks" onClick={()=>setSearchOpen(true)}><Search size={18}/><span>Search</span><kbd>⌘ K</kbd></button><span className="top-divider"></span><NotificationsMenu user={user}/>{user ? <span className="top-avatar">{user.fullName?.slice(0,1).toUpperCase()}</span> : <Link className="text-button" to="/login">Sign in</Link>}</div></header><Routes><Route path="/" element={<EmptyDashboard health={health} user={user} summary={summary} summaryError={summaryError}/>}/><Route path="/projects" element={<ProtectedRoute user={user} loading={authLoading}><ProjectsPage/></ProtectedRoute>}/><Route path="/projects/:projectId" element={<ProtectedRoute user={user} loading={authLoading}><ProjectDetailPage/></ProtectedRoute>}/><Route path="/tasks" element={<ProtectedRoute user={user} loading={authLoading}><TasksPage user={user}/></ProtectedRoute>}/><Route path="/issues" element={<ProtectedRoute user={user} loading={authLoading}><IssuesPage user={user}/></ProtectedRoute>}/><Route path="/settings" element={<ProtectedRoute user={user} loading={authLoading}><SettingsPage user={user} onUserUpdated={setUser}/></ProtectedRoute>}/></Routes></main></div>}/></Routes>{searchOpen&&<QuickSearch onClose={()=>setSearchOpen(false)} onSearch={searchTasks}/>}</>
 }
