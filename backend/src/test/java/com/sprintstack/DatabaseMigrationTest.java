@@ -138,4 +138,40 @@ class DatabaseMigrationTest {
         assertThat(currentMembers).filteredOn(member->member.userId().equals(owner.getId())).singleElement()
                 .extracting("role").isEqualTo("PROJECT_MANAGER");
     }
+
+    @Test
+    @Transactional
+    void bulkTaskStatusChangesHonorAssignmentAndProjectBoundaries() {
+        User owner=users.saveAndFlush(new User("Bulk Owner","bulk-owner@example.test","already-hashed-password"));
+        User developer=users.saveAndFlush(new User("Bulk Developer","bulk-dev@example.test","already-hashed-password"));
+        var project=projects.create(owner.getEmail(),new ProjectRequest("Bulk work","Task status boundary",Priority.MEDIUM,null,null));
+        projectMembers.add(owner.getEmail(),project.id(),new MemberRequest(developer.getEmail(),ProjectRole.DEVELOPER));
+        var assigned=tasks.create(owner.getEmail(),project.id(),new TaskRequest("Assigned task",null,developer.getId(),null,null,null,null,null,List.of()));
+        var changed=tasks.changeStatuses(developer.getEmail(),project.id(),List.of(assigned.id()),TaskStatus.IN_PROGRESS);
+        assertThat(changed).singleElement().extracting("status").isEqualTo("IN_PROGRESS");
+
+        var otherProject=projects.create(owner.getEmail(),new ProjectRequest("Other work","Separate boundary",Priority.MEDIUM,null,null));
+        var foreign=tasks.create(owner.getEmail(),otherProject.id(),new TaskRequest("Foreign task",null,null,null,null,null,null,null,List.of()));
+        var denied=org.junit.jupiter.api.Assertions.assertThrows(ResponseStatusException.class,
+                ()->tasks.changeStatuses(owner.getEmail(),project.id(),List.of(assigned.id(),foreign.id()),TaskStatus.COMPLETED));
+        assertThat(denied.getStatusCode().value()).isEqualTo(404);
+        assertThat(tasks.get(owner.getEmail(),assigned.id()).status()).isEqualTo("IN_PROGRESS");
+    }
+
+    @Test
+    @Transactional
+    void issuePriorityFilterAndRecordLookupEnforceMembership() {
+        User owner=users.saveAndFlush(new User("Priority Owner","priority-owner@example.test","already-hashed-password"));
+        User outsider=users.saveAndFlush(new User("Priority Outsider","priority-outsider@example.test","already-hashed-password"));
+        var project=projects.create(owner.getEmail(),new ProjectRequest("Priority triage","Issue priority filter",Priority.MEDIUM,null,null));
+        var urgent=issues.create(owner.getEmail(),project.id(),new IssueRequest("Urgent failure",null,null,
+                com.sprintstack.entity.IssueSeverity.CRITICAL,com.sprintstack.entity.TaskPriority.URGENT,null));
+        issues.create(owner.getEmail(),project.id(),new IssueRequest("Normal failure",null,null,
+                com.sprintstack.entity.IssueSeverity.MEDIUM,com.sprintstack.entity.TaskPriority.MEDIUM,null));
+        assertThat(issues.list(owner.getEmail(),project.id(),null,null,com.sprintstack.entity.TaskPriority.URGENT,null))
+                .extracting("id").containsExactly(urgent.id());
+        var denied=org.junit.jupiter.api.Assertions.assertThrows(ResponseStatusException.class,
+                ()->issues.get(outsider.getEmail(),urgent.id()));
+        assertThat(denied.getStatusCode().value()).isEqualTo(403);
+    }
 }
