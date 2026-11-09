@@ -15,6 +15,7 @@ import com.sprintstack.service.ProjectService;
 import com.sprintstack.service.TaskService;
 import com.sprintstack.service.DashboardService;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,7 +53,7 @@ class DatabaseMigrationTest {
         assertThat(project.memberCount()).isEqualTo(1);
         assertThat(org.junit.jupiter.api.Assertions.assertThrows(ResponseStatusException.class,
                 ()->projects.get(outsider.getEmail(),project.id())).getStatusCode().value()).isEqualTo(403);
-        var task=tasks.create(owner.getEmail(),project.id(),new TaskRequest("Ship feature","Work item",null,null,null,null,null,null));
+        var task=tasks.create(owner.getEmail(),project.id(),new TaskRequest("Ship feature","Work item",null,null,null,null,null,null,List.of("backend")));
         tasks.changeStatus(owner.getEmail(),task.id(),TaskStatus.COMPLETED);
         var summary=dashboard.summary(owner.getEmail());
         assertThat(summary.totalProjects()).isEqualTo(1);
@@ -60,5 +61,6 @@ class DatabaseMigrationTest {
         assertThat(summary.completedTasks()).isEqualTo(1);
         assertThat(summary.taskStatusCounts().get("COMPLETED")).isEqualTo(1L);
         assertThat(summary.projectProgress().getFirst().completionPercent()).isEqualTo(100);
+        assertThat(task.labels()).containsExactly("backend");
     }
 }

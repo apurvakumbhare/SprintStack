@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.List;
 
 public record TaskRequest(
         @NotBlank @Size(max = 180) String title,
@@ -15,5 +16,6 @@ public record TaskRequest(
         TaskStatus status,
         LocalDate startDate,
         LocalDate dueDate,
-        @PositiveOrZero Integer estimatedEffort
+        @PositiveOrZero Integer estimatedEffort,
+        @Size(max = 10) List<@NotBlank @Size(max = 60) String> labels
 ) { }

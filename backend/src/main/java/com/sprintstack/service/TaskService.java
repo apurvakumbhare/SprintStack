@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Set;
 
 @Service
 public class TaskService {
@@ -41,9 +43,11 @@ public class TaskService {
         User actor = projects.userByEmail(email);
         Project project = projects.projectForMember(email, projectId);
         User assignee = assignee(projectId, request.assigneeId());
-        Task task = tasks.save(new Task(request.title().trim(), clean(request.description()), project, assignee, actor,
+        Task task = new Task(request.title().trim(), clean(request.description()), project, assignee, actor,
                 request.priority() == null ? TaskPriority.MEDIUM : request.priority(),
-                request.status() == null ? TaskStatus.TODO : request.status(), request.startDate(), request.dueDate(), request.estimatedEffort()));
+                request.status() == null ? TaskStatus.TODO : request.status(), request.startDate(), request.dueDate(), request.estimatedEffort());
+        task.setLabels(labels(request.labels()));
+        task = tasks.save(task);
         events.record(actor,project,"TASK_CREATED","TASK",task.getId(),"Created task “"+task.getTitle()+"”");
         if(assignee!=null&&!assignee.getId().equals(actor.getId()))events.notify(assignee,"TASK_ASSIGNED","You were assigned task “"+task.getTitle()+"”","TASK",task.getId());
         return TaskResponse.from(task);
@@ -64,7 +68,7 @@ public class TaskService {
         TaskStatus nextStatus=request.status() == null ? previousStatus : request.status();
         task.update(request.title().trim(), clean(request.description()), nextAssignee,
                 request.priority() == null ? task.getPriority() : request.priority(),
-                nextStatus, request.startDate(), request.dueDate(), request.estimatedEffort());
+                nextStatus, request.startDate(), request.dueDate(), request.estimatedEffort(), labels(request.labels()));
         events.record(actor,task.getProject(),"TASK_UPDATED","TASK",task.getId(),"Updated task “"+task.getTitle()+"”");
         if(previousStatus!=nextStatus)events.record(actor,task.getProject(),"TASK_STATUS_CHANGED","TASK",task.getId(),"Moved “"+task.getTitle()+"” to "+nextStatus.name().replace('_',' ').toLowerCase());
         if(previousStatus!=nextStatus&&nextStatus==TaskStatus.COMPLETED&&!task.getCreatedBy().getId().equals(actor.getId()))events.notify(task.getCreatedBy(),"TASK_COMPLETED","Task “"+task.getTitle()+"” was completed","TASK",task.getId());
@@ -123,4 +127,13 @@ public class TaskService {
         if (start != null && due != null && due.isBefore(start)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Due date cannot be before the start date");
     }
     private static String clean(String value) { return value == null || value.isBlank() ? null : value.trim(); }
+    private static Set<String> labels(List<String> input) {
+        if (input == null) return Set.of();
+        var unique = new LinkedHashMap<String, String>();
+        for (String label : input) {
+            String cleaned = label.trim();
+            unique.putIfAbsent(cleaned.toLowerCase(java.util.Locale.ROOT), cleaned);
+        }
+        return Set.copyOf(unique.values());
+    }
 }
