@@ -36,6 +36,14 @@ public class IssueService {
                 .stream().map(IssueResponse::from).toList();
     }
 
+    @Transactional(readOnly=true)
+    public IssueResponse get(String email, Long issueId) {
+        User actor=projects.userByEmail(email);
+        Issue issue=issueById(issueId);
+        projects.requireMember(issue.getProject().getId(),actor.getId());
+        return IssueResponse.from(issue);
+    }
+
     @Transactional
     public IssueResponse create(String email, Long projectId, IssueRequest request) {
         User reporter=projects.userByEmail(email);

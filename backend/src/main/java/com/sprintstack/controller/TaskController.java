@@ -48,6 +48,11 @@ public class TaskController {
         return tasks.update(authentication.getName(), taskId, request);
     }
 
+    @GetMapping("/api/tasks/{taskId}")
+    public TaskResponse get(Authentication authentication, @PathVariable Long taskId) {
+        return tasks.get(authentication.getName(), taskId);
+    }
+
     @PatchMapping("/api/tasks/{taskId}/status")
     public TaskResponse changeStatus(Authentication authentication, @PathVariable Long taskId,
                                      @Valid @RequestBody TaskStatusRequest request) {

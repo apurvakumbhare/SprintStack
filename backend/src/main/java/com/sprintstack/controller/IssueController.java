@@ -26,6 +26,10 @@ public class IssueController {
                                     @RequestParam(required=false) String q){
         return issues.list(authentication.getName(),projectId,status,severity,priority,q);
     }
+    @GetMapping("/api/issues/{issueId}")
+    public IssueResponse get(Authentication authentication,@PathVariable Long issueId){
+        return issues.get(authentication.getName(),issueId);
+    }
     @PostMapping("/api/projects/{projectId}/issues")
     @ResponseStatus(HttpStatus.CREATED)
     public IssueResponse create(Authentication authentication,@PathVariable Long projectId,@Valid @RequestBody IssueRequest request){

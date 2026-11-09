@@ -76,6 +76,14 @@ public class TaskService {
         return TaskResponse.from(task);
     }
 
+    @Transactional(readOnly = true)
+    public TaskResponse get(String email, Long taskId) {
+        User actor = projects.userByEmail(email);
+        Task task = taskById(taskId);
+        requireMember(task.getProject().getId(), actor.getId());
+        return TaskResponse.from(task);
+    }
+
     @Transactional
     public TaskResponse changeStatus(String email, Long taskId, TaskStatus status) {
         User actor = projects.userByEmail(email);
