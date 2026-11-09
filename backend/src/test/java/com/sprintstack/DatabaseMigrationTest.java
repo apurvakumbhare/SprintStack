@@ -110,4 +110,30 @@ class DatabaseMigrationTest {
         assertThat(notifications.countByUser_IdAndReadFalse(owner.getId())).isGreaterThanOrEqualTo(1);
         assertThat(issues.list(owner.getEmail(),project.id(),IssueStatus.RESOLVED,null,null)).hasSize(1);
     }
+
+    @Test
+    @Transactional
+    void membershipManagementPreventsDuplicatesAndTransfersOwnershipSafely() {
+        User owner=users.saveAndFlush(new User("Team Owner","team-owner@example.test","already-hashed-password"));
+        User developer=users.saveAndFlush(new User("Team Developer","team-developer@example.test","already-hashed-password"));
+        User outsider=users.saveAndFlush(new User("Team Outsider","team-outsider@example.test","already-hashed-password"));
+        var project=projects.create(owner.getEmail(),new ProjectRequest("Team roles","Membership integration",Priority.MEDIUM,null,null));
+
+        var forbidden=org.junit.jupiter.api.Assertions.assertThrows(ResponseStatusException.class,
+                ()->projectMembers.add(developer.getEmail(),project.id(),new MemberRequest(outsider.getEmail(),ProjectRole.DEVELOPER)));
+        assertThat(forbidden.getStatusCode().value()).isEqualTo(403);
+
+        projectMembers.add(owner.getEmail(),project.id(),new MemberRequest(developer.getEmail(),ProjectRole.DEVELOPER));
+        var duplicate=org.junit.jupiter.api.Assertions.assertThrows(ResponseStatusException.class,
+                ()->projectMembers.add(owner.getEmail(),project.id(),new MemberRequest(developer.getEmail(),ProjectRole.DEVELOPER)));
+        assertThat(duplicate.getStatusCode().value()).isEqualTo(409);
+        var ownerRemoval=org.junit.jupiter.api.Assertions.assertThrows(ResponseStatusException.class,
+                ()->projectMembers.remove(owner.getEmail(),project.id(),owner.getId()));
+        assertThat(ownerRemoval.getStatusCode().value()).isEqualTo(403);
+
+        assertThat(projectMembers.transferOwnership(owner.getEmail(),project.id(),developer.getId()).role()).isEqualTo("OWNER");
+        var currentMembers=projectMembers.list(owner.getEmail(),project.id());
+        assertThat(currentMembers).filteredOn(member->member.userId().equals(owner.getId())).singleElement()
+                .extracting("role").isEqualTo("PROJECT_MANAGER");
+    }
 }
