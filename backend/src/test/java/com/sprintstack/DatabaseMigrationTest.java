@@ -64,6 +64,7 @@ class DatabaseMigrationTest {
         assertThat(summary.completedTasks()).isEqualTo(1);
         assertThat(summary.taskStatusCounts().get("COMPLETED")).isEqualTo(1L);
         assertThat(summary.projectProgress().getFirst().completionPercent()).isEqualTo(50);
+        assertThat(summary.recentActivity()).extracting("projectName").containsOnly("Release plan");
         assertThat(task.labels()).containsExactly("backend");
         var projectSummary=analytics.summary(owner.getEmail(),project.id());
         assertThat(projectSummary.totalTasks()).isEqualTo(2);

@@ -2,4 +2,7 @@ package com.sprintstack.repository;
 import com.sprintstack.entity.ActivityLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
-public interface ActivityLogRepository extends JpaRepository<ActivityLog,Long>{List<ActivityLog> findTop50ByProject_IdOrderByCreatedAtDesc(Long projectId);}
+public interface ActivityLogRepository extends JpaRepository<ActivityLog,Long>{
+    List<ActivityLog> findTop50ByProject_IdOrderByCreatedAtDesc(Long projectId);
+    List<ActivityLog> findTop10ByProject_IdInOrderByCreatedAtDesc(List<Long> projectIds);
+}

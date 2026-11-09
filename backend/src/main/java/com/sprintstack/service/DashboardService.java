@@ -1,6 +1,7 @@
 package com.sprintstack.service;
 
 import com.sprintstack.dto.DashboardResponse;
+import com.sprintstack.dto.activity.ActivityResponse;
 import com.sprintstack.entity.Project;
 import com.sprintstack.entity.ProjectStatus;
 import com.sprintstack.entity.TaskStatus;
@@ -8,6 +9,7 @@ import com.sprintstack.entity.User;
 import com.sprintstack.entity.Task;
 import com.sprintstack.entity.ProjectMember;
 import com.sprintstack.repository.ProjectRepository;
+import com.sprintstack.repository.ActivityLogRepository;
 import com.sprintstack.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,9 +22,10 @@ public class DashboardService {
     private final ProjectService projectService;
     private final ProjectRepository projects;
     private final TaskRepository tasks;
+    private final ActivityLogRepository activity;
 
-    public DashboardService(ProjectService projectService, ProjectRepository projects, TaskRepository tasks) {
-        this.projectService=projectService; this.projects=projects; this.tasks=tasks;
+    public DashboardService(ProjectService projectService, ProjectRepository projects, TaskRepository tasks, ActivityLogRepository activity) {
+        this.projectService=projectService; this.projects=projects; this.tasks=tasks; this.activity=activity;
     }
 
     @Transactional(readOnly = true)
@@ -61,7 +64,10 @@ public class DashboardService {
         for(int i=0;i<6;i++){LocalDate week=weekStart.plusWeeks(i);weeklyCompletion.add(new DashboardResponse.WeeklyCompletion(week.toString(),weekly.getOrDefault(week,0L)));}
         List<DashboardResponse.TeamWorkload> teamWorkload=workload.values().stream().sorted(Comparator.comparingLong(DashboardResponse.TeamWorkload::assignedTasks).reversed()).toList();
         Map<String,Long> statusMap=new LinkedHashMap<>();statusCounts.forEach((key,value)->statusMap.put(key.name(),value));
+        List<Long> projectIds=visibleProjects.stream().map(Project::getId).toList();
+        List<ActivityResponse> recentActivity=projectIds.isEmpty()?List.of():activity.findTop10ByProject_IdInOrderByCreatedAtDesc(projectIds)
+                .stream().map(ActivityResponse::from).toList();
         return new DashboardResponse(visibleProjects.size(), active, completedProjects, totalTasks, completedTasks,
-                totalTasks - completedTasks, overdue, dueSoon, statusMap, weeklyCompletion, teamWorkload, progress);
+                totalTasks - completedTasks, overdue, dueSoon, statusMap, weeklyCompletion, teamWorkload, progress, recentActivity);
     }
 }
