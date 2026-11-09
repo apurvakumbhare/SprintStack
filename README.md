@@ -83,3 +83,66 @@ From `frontend/`: `npm ci` then `npm run build`
 GitHub Actions runs these checks on pushes and pull requests to `main`.
 
 For manual API checks, import [`postman/team-project-api.postman_collection.json`](postman/team-project-api.postman_collection.json) into Postman. Set the collection’s `email` and `password` variables locally, run Login or Register first, then run the project/task/issue requests in order. The token and created record IDs are saved as collection variables. Do not export or commit real credentials.
+
+## Problem statement and objectives
+
+Teams often split project plans, task assignments, bug reports, and progress updates across separate tools. This application brings those workflows into one project workspace with role-aware access and database-backed reporting. The goal is to make ownership, deadlines, and delivery progress visible without relying on demo data.
+
+## Architecture
+
+The codebase is a modular monolith. The React client sends authenticated HTTP requests to Spring MVC controllers. Controllers validate request DTOs and delegate authorization and business rules to service classes. Services read and write through Spring Data repositories, with MySQL as the source of truth. Flyway applies schema changes in order; JWT authentication protects API routes; scheduled jobs create deadline notifications.
+
+```text
+React + Vite
+    │ HTTPS/JSON + bearer JWT
+    ▼
+Spring Security → Controllers → Services → JPA repositories
+                                             │
+                                             ▼
+                                           MySQL
+```
+
+## Repository layout
+
+```text
+.
+├── backend/
+│   └── src/{main,test}/java/com/sprintstack/
+│       ├── config/       # Security and application configuration
+│       ├── controller/   # REST endpoints
+│       ├── dto/          # Validated request and response types
+│       ├── entity/       # JPA entities and enums
+│       ├── exception/    # API error mapping
+│       ├── repository/   # Database access
+│       ├── security/     # JWT authentication
+│       └── service/      # Business rules and analytics
+├── frontend/src/
+│   ├── components/       # Shared dialogs, charts, and notifications
+│   ├── pages/            # Route-level screens
+│   └── lib/              # API, branding, and CSV helpers
+├── postman/              # Manual API request collection
+└── .github/workflows/    # CI checks
+```
+
+## Data model
+
+- A user can join many projects through `project_members`; that relationship stores the project-specific role and has a unique `(project_id, user_id)` constraint.
+- Projects own tasks, issues, activity records, and memberships.
+- Tasks may have an assignee, labels, and comments. Issues may have an assignee and comments.
+- Notifications belong to a user and optionally reference a related record. Activity records retain the actor, project, action, and timestamp.
+- Foreign keys protect references; indexes support membership, status, assignee, deadline, and notification queries. Flyway migrations are in `backend/src/main/resources/db/migration/`.
+
+## Screenshots
+
+Screenshots will be added after the final visual QA pass against the local database-backed application.
+
+## CI
+
+GitHub Actions runs the backend test suite and frontend production build on pushes and pull requests to `main`. The workflow is defined in `.github/workflows/ci.yml` and uses Java 21 and Node.js 20.
+
+## Future improvements
+
+- Add email invitations after a delivery provider and sender configuration are selected.
+- Add paginated activity and notification history for larger workspaces.
+- Add optional user avatars and richer profile details.
+- Add deployment configuration after a hosting environment has been chosen.
