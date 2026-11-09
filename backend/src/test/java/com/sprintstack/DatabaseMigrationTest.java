@@ -69,6 +69,8 @@ class DatabaseMigrationTest {
         assertThat(org.junit.jupiter.api.Assertions.assertThrows(ResponseStatusException.class,
                 ()->projects.get(outsider.getEmail(),project.id())).getStatusCode().value()).isEqualTo(403);
         var task=tasks.create(owner.getEmail(),project.id(),new TaskRequest("Ship feature","Work item",null,null,null,null,null,null,List.of("backend")));
+        assertThat(tasks.list(owner.getEmail(),project.id(),null,null,null,false,false,"backend"))
+                .extracting("id").containsExactly(task.id());
         tasks.changeStatus(owner.getEmail(),task.id(),TaskStatus.COMPLETED);
         tasks.create(owner.getEmail(),project.id(),new TaskRequest("Review docs",null,owner.getId(),null,null,null,null,null,List.of()));
         var summary=dashboard.summary(owner.getEmail());

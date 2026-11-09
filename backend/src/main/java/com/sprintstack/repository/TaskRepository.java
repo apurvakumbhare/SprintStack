@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
-    @Query("select t from Task t where t.project.id = :projectId and (:status is null or t.status = :status) and (:priority is null or t.priority = :priority) and (:assigneeId is null or t.assignee.id = :assigneeId) and (:overdue = false or (t.dueDate < :today and t.status <> :completed)) and (:query is null or lower(t.title) like lower(concat('%', :query, '%')) or lower(t.description) like lower(concat('%', :query, '%'))) order by t.dueDate asc, t.createdAt desc")
+    @Query("select t from Task t where t.project.id = :projectId and (:status is null or t.status = :status) and (:priority is null or t.priority = :priority) and (:assigneeId is null or t.assignee.id = :assigneeId) and (:overdue = false or (t.dueDate < :today and t.status <> :completed)) and (:query is null or lower(t.title) like lower(concat('%', :query, '%')) or lower(t.description) like lower(concat('%', :query, '%')) or exists (select label from Task taskWithLabel join taskWithLabel.labels label where taskWithLabel.id = t.id and lower(label) like lower(concat('%', :query, '%')))) order by t.dueDate asc, t.createdAt desc")
     List<Task> searchProjectTasks(@Param("projectId") Long projectId, @Param("status") TaskStatus status,
                                   @Param("priority") TaskPriority priority,@Param("assigneeId") Long assigneeId,
                                   @Param("overdue") boolean overdue,@Param("today") LocalDate today,
