@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, LoaderCircle } from 'lucide-react'
 import api from '../lib/api'
 import { APP_NAME } from '../lib/branding'
@@ -7,6 +7,7 @@ import { APP_NAME } from '../lib/branding'
 export default function AuthPage({ mode, onAuthenticated }) {
   const isRegister = mode === 'register'
   const navigate = useNavigate()
+  const location = useLocation()
   const [form, setForm] = useState({ fullName: '', email: '', password: '' })
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -21,7 +22,8 @@ export default function AuthPage({ mode, onAuthenticated }) {
       sessionStorage.setItem('sprintstack.token', data.token)
       sessionStorage.setItem('sprintstack.email', data.user.email)
       onAuthenticated(data.user)
-      navigate('/', { replace: true })
+      const returnTo = location.state?.from
+      navigate(returnTo ? `${returnTo.pathname}${returnTo.search || ''}${returnTo.hash || ''}` : '/', { replace: true })
     } catch (requestError) {
       setError(requestError.response?.data?.error || requestError.response?.data?.message || 'We could not sign you in. Check the API connection and try again.')
     } finally {

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import {
   Activity, ChevronDown, CircleHelp, ClipboardCheck, FolderKanban,
   LayoutDashboard, ListTodo, Search, Settings, ShieldAlert, Users,
@@ -57,16 +57,23 @@ function PlaceholderPage({title}) {
   return <div className="page-content"><div className="eyebrow">WORKSPACE</div><h1>{title}</h1><p className="placeholder-copy">This area is being built as part of the SprintStack project.</p><div className="placeholder-panel"><span className="card-icon violet"><FolderKanban size={18}/></span><div><b>Coming up next</b><p>Project and task data will appear here once the API and database modules are in place.</p></div></div></div>
 }
 
+function ProtectedRoute({ user, loading, children }) {
+  const location = useLocation()
+  if (loading) return <div className="page-content"><div className="loading-state">Checking your session…</div></div>
+  return user ? children : <Navigate to="/login" state={{ from: location }} replace />
+}
+
 export default function App() {
   const [health,setHealth] = useState('checking')
   const [user,setUser] = useState(null)
+  const [authLoading,setAuthLoading] = useState(Boolean(sessionStorage.getItem('sprintstack.token')))
   const [summary,setSummary] = useState(null)
   const [summaryError,setSummaryError] = useState('')
   const navigate = useNavigate()
   const location = useLocation()
   useEffect(()=>{api.get('/health').then(()=>setHealth('online')).catch(()=>setHealth('offline'))},[])
-  useEffect(()=>{if(sessionStorage.getItem('sprintstack.token')) api.get('/auth/me').then(({data})=>{setUser(data);sessionStorage.setItem('sprintstack.email',data.email)}).catch(()=>{sessionStorage.removeItem('sprintstack.token');sessionStorage.removeItem('sprintstack.email')})},[])
+  useEffect(()=>{const token=sessionStorage.getItem('sprintstack.token');if(!token){setAuthLoading(false);return}api.get('/auth/me').then(({data})=>{setUser(data);sessionStorage.setItem('sprintstack.email',data.email)}).catch(()=>{sessionStorage.removeItem('sprintstack.token');sessionStorage.removeItem('sprintstack.email')}).finally(()=>setAuthLoading(false))},[])
   useEffect(()=>{if(!user){setSummary(null);return} api.get('/dashboard').then(({data})=>{setSummary(data);setSummaryError('')}).catch(e=>setSummaryError(e.response?.data?.error||'Dashboard data could not be loaded.'))},[user,location.pathname])
   function logout() { sessionStorage.removeItem('sprintstack.token'); sessionStorage.removeItem('sprintstack.email'); setUser(null); navigate('/login') }
-  return <Routes><Route path="/login" element={<AuthPage mode="login" onAuthenticated={setUser}/>}/><Route path="/register" element={<AuthPage mode="register" onAuthenticated={setUser}/>}/><Route path="*" element={<div className="app-shell"><Sidebar user={user} onLogout={logout}/><main className="main-area"><header className="topbar"><div className="breadcrumbs"><span>Workspace</span><b>/</b><strong>Overview</strong></div><div className="top-actions"><button className="icon-button search-button" aria-label="Search"><Search size={18}/><span>Search</span><kbd>⌘ K</kbd></button><span className="top-divider"></span><NotificationsMenu user={user}/>{user ? <span className="top-avatar">{user.fullName?.slice(0,1).toUpperCase()}</span> : <Link className="text-button" to="/login">Sign in</Link>}</div></header><Routes><Route path="/" element={<EmptyDashboard health={health} user={user} summary={summary} summaryError={summaryError}/>}/><Route path="/projects" element={<ProjectsPage/>}/><Route path="/projects/:projectId" element={<ProjectDetailPage/>}/><Route path="/tasks" element={<TasksPage user={user}/>}/><Route path="/issues" element={<IssuesPage user={user}/>}/><Route path="/settings" element={<SettingsPage user={user} onUserUpdated={setUser}/>}/></Routes></main></div>}/></Routes>
+  return <Routes><Route path="/login" element={<AuthPage mode="login" onAuthenticated={setUser}/>}/><Route path="/register" element={<AuthPage mode="register" onAuthenticated={setUser}/>}/><Route path="*" element={<div className="app-shell"><Sidebar user={user} onLogout={logout}/><main className="main-area"><header className="topbar"><div className="breadcrumbs"><span>Workspace</span><b>/</b><strong>Overview</strong></div><div className="top-actions"><button className="icon-button search-button" aria-label="Search"><Search size={18}/><span>Search</span><kbd>⌘ K</kbd></button><span className="top-divider"></span><NotificationsMenu user={user}/>{user ? <span className="top-avatar">{user.fullName?.slice(0,1).toUpperCase()}</span> : <Link className="text-button" to="/login">Sign in</Link>}</div></header><Routes><Route path="/" element={<EmptyDashboard health={health} user={user} summary={summary} summaryError={summaryError}/>}/><Route path="/projects" element={<ProtectedRoute user={user} loading={authLoading}><ProjectsPage/></ProtectedRoute>}/><Route path="/projects/:projectId" element={<ProtectedRoute user={user} loading={authLoading}><ProjectDetailPage/></ProtectedRoute>}/><Route path="/tasks" element={<ProtectedRoute user={user} loading={authLoading}><TasksPage user={user}/></ProtectedRoute>}/><Route path="/issues" element={<ProtectedRoute user={user} loading={authLoading}><IssuesPage user={user}/></ProtectedRoute>}/><Route path="/settings" element={<ProtectedRoute user={user} loading={authLoading}><SettingsPage user={user} onUserUpdated={setUser}/></ProtectedRoute>}/></Routes></main></div>}/></Routes>
 }
