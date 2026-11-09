@@ -6,6 +6,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
@@ -43,6 +45,16 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleConflict(DataIntegrityViolationException exception) {
         return error(HttpStatus.CONFLICT.value(), "A record with the same unique value already exists");
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        return error(HttpStatus.BAD_REQUEST.value(), "Invalid value for " + exception.getName());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadableBody(HttpMessageNotReadableException exception) {
+        return error(HttpStatus.BAD_REQUEST.value(), "Request body is invalid or contains an unsupported value");
     }
 
     private ResponseEntity<Map<String, Object>> error(int status, String message) {
