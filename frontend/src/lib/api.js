@@ -12,4 +12,15 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+api.interceptors.response.use((response) => response, (error) => {
+  const path = error.config?.url || ''
+  const isCredentialSubmission = ['/auth/login', '/auth/register', '/auth/password'].some(route => path.includes(route))
+  if (error.response?.status === 401 && !isCredentialSubmission && sessionStorage.getItem('sprintstack.token')) {
+    sessionStorage.removeItem('sprintstack.token')
+    sessionStorage.removeItem('sprintstack.email')
+    window.dispatchEvent(new Event('sprintstack:session-expired'))
+  }
+  return Promise.reject(error)
+})
+
 export default api
