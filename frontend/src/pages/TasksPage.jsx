@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Check, ChevronDown, CirclePlus, ClipboardCheck, Download, GripVertical, LoaderCircle, Plus, Search } from 'lucide-react'
 import api from '../lib/api'
+import { downloadCsv } from '../lib/csv'
 import TaskDetailsDialog from '../components/TaskDetailsDialog'
 
 const columns = [
@@ -18,22 +19,8 @@ function downloadTasksCsv(tasks, projectName) {
     ['Labels', task => task.labels?.join(', ')], ['Start date', task => task.startDate], ['Due date', task => task.dueDate],
     ['Estimate (hours)', task => task.estimatedEffort], ['Created by', task => task.createdByName],
   ]
-  const escape = value => {
-    let text = String(value ?? '')
-    if (/^[\s]*[=+@\-\t\r]/.test(text)) text = `'${text}`
-    return `"${text.replaceAll('"', '""')}"`
-  }
-  const csv = [columns.map(([header]) => escape(header)), ...tasks.map(task => columns.map(([, value]) => escape(value(task))))]
-    .map(row => row.join(',')).join('\r\n')
-  const blobUrl = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }))
-  const link = document.createElement('a')
-  const filePart = (projectName || 'tasks').normalize('NFKD').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'tasks'
-  link.href = blobUrl
-  link.download = `${filePart}-tasks.csv`
-  document.body.append(link)
-  link.click()
-  link.remove()
-  URL.revokeObjectURL(blobUrl)
+  downloadCsv(`${projectName || 'tasks'}-tasks.csv`, columns.map(([header]) => header),
+    tasks.map(task => columns.map(([, value]) => value(task))))
 }
 
 function TaskDialog({ projectId, onClose, onCreated }) {
