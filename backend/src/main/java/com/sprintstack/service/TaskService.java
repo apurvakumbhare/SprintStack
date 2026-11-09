@@ -80,6 +80,24 @@ public class TaskService {
     public TaskResponse changeStatus(String email, Long taskId, TaskStatus status) {
         User actor = projects.userByEmail(email);
         Task task = taskById(taskId);
+        return changeStatus(actor, task, status);
+    }
+
+    @Transactional
+    public List<TaskResponse> changeStatuses(String email, Long projectId, List<Long> taskIds, TaskStatus status) {
+        User actor = projects.userByEmail(email);
+        projects.projectForMember(email, projectId);
+        if (taskIds.stream().distinct().count() != taskIds.size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Task IDs must be unique");
+        }
+        List<Task> selected = taskIds.stream().map(this::taskById).toList();
+        if (selected.stream().anyMatch(task -> !task.getProject().getId().equals(projectId))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "All selected tasks must belong to this project");
+        }
+        return selected.stream().map(task -> changeStatus(actor, task, status)).toList();
+    }
+
+    private TaskResponse changeStatus(User actor, Task task, TaskStatus status) {
         Long projectId = task.getProject().getId();
         requireMember(projectId, actor.getId());
         boolean assigned = task.getAssignee() != null && task.getAssignee().getId().equals(actor.getId());

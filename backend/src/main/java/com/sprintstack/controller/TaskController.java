@@ -3,6 +3,7 @@ package com.sprintstack.controller;
 import com.sprintstack.dto.task.TaskRequest;
 import com.sprintstack.dto.task.TaskResponse;
 import com.sprintstack.dto.task.TaskStatusRequest;
+import com.sprintstack.dto.task.TaskBulkStatusRequest;
 import com.sprintstack.entity.TaskStatus;
 import com.sprintstack.entity.TaskPriority;
 import com.sprintstack.service.TaskService;
@@ -33,6 +34,12 @@ public class TaskController {
     public TaskResponse create(Authentication authentication, @PathVariable Long projectId,
                                @Valid @RequestBody TaskRequest request) {
         return tasks.create(authentication.getName(), projectId, request);
+    }
+
+    @PatchMapping("/api/projects/{projectId}/tasks/status")
+    public List<TaskResponse> changeStatuses(Authentication authentication, @PathVariable Long projectId,
+                                              @Valid @RequestBody TaskBulkStatusRequest request) {
+        return tasks.changeStatuses(authentication.getName(), projectId, request.taskIds(), request.status());
     }
 
     @PutMapping("/api/tasks/{taskId}")
