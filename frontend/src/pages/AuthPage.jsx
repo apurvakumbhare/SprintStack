@@ -102,7 +102,7 @@ export default function AuthPage({ mode, onAuthenticated }) {
       if (verifiedUser) {
         setProfilePhotoSaving(true)
         api.put('/auth/photo', { photo: photoData })
-          .then(({ data }) => { setPhoto(data.photo); setPhotoName('Saved profile photo'); setProfilePhotoExists(true); setPhotoError('') })
+          .then(({ data }) => { setPhoto(data.photo); setPhotoName('Saved profile photo'); setProfilePhotoExists(true); setPhotoError(''); onAuthenticated(verifiedUser, data.photo) })
           .catch(requestError => setPhotoError(requestError.response?.data?.error || 'The photo could not be saved. Choose it again to retry.'))
           .finally(() => setProfilePhotoSaving(false))
       }
@@ -120,16 +120,18 @@ export default function AuthPage({ mode, onAuthenticated }) {
       sessionStorage.setItem('sprintstack.token', data.token)
       sessionStorage.setItem('sprintstack.email', data.user.email)
       setVerifiedUser(data.user)
-      onAuthenticated(data.user)
       setProfilePhotoLoading(true)
+      let savedPhotoUrl = photo || null
       try {
         if (photo) {
           const { data: savedPhoto } = await api.put('/auth/photo', { photo })
           setPhoto(savedPhoto.photo)
           setPhotoName('Saved profile photo')
           setProfilePhotoExists(true)
+          savedPhotoUrl = savedPhoto.photo
         } else {
           const { data: savedPhoto } = await api.get('/auth/photo')
+          savedPhotoUrl = savedPhoto.photo || null
           if (savedPhoto.photo) {
             setPhoto(savedPhoto.photo)
             setPhotoName('Saved profile photo')
@@ -142,6 +144,7 @@ export default function AuthPage({ mode, onAuthenticated }) {
         setPhotoError(photoRequestError.response?.data?.error || 'Your account is verified, but its profile photo could not be loaded or saved.')
       } finally {
         setProfilePhotoLoading(false)
+        onAuthenticated(data.user, savedPhotoUrl)
       }
     } catch (requestError) {
       setError(requestError.response?.data?.error || requestError.response?.data?.message || 'We could not sign you in. Check the API connection and try again.')
