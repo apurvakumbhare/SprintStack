@@ -23,6 +23,8 @@ public class Project {
     private LocalDate startDate;
     @Column(name = "due_date")
     private LocalDate dueDate;
+    @Column(name = "github_repo_url", length = 300)
+    private String githubRepoUrl;
     @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -54,8 +56,10 @@ public class Project {
     public Priority getPriority() { return priority; }
     public LocalDate getStartDate() { return startDate; }
     public LocalDate getDueDate() { return dueDate; }
+    public String getGithubRepoUrl() { return githubRepoUrl; }
     public User getCreatedBy() { return createdBy; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public Set<ProjectMember> getMembers() { return members; }
+    public void updateGithubRepoUrl(String githubRepoUrl) { this.githubRepoUrl = githubRepoUrl; this.updatedAt = LocalDateTime.now(); }
 }

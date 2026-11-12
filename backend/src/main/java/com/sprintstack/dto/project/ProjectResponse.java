@@ -10,7 +10,7 @@ import java.util.Base64;
 public record ProjectResponse(Long id, String name, String description, String status, String priority,
                               LocalDate startDate, LocalDate dueDate, Long createdById,
                               String createdByName, int memberCount, List<MemberSummary> members,
-                              LocalDateTime createdAt, LocalDateTime updatedAt) {
+                              LocalDateTime createdAt, LocalDateTime updatedAt, String githubRepoUrl) {
     public record MemberSummary(Long id, String fullName, String email, String role, String profilePhoto) { }
     public static ProjectResponse from(Project project) {
         List<MemberSummary> members = project.getMembers().stream()
@@ -19,7 +19,7 @@ public record ProjectResponse(Long id, String name, String description, String s
                 .toList();
         return new ProjectResponse(project.getId(), project.getName(), project.getDescription(), project.getStatus().name(),
                 project.getPriority().name(), project.getStartDate(), project.getDueDate(), project.getCreatedBy().getId(),
-                project.getCreatedBy().getFullName(), members.size(), members, project.getCreatedAt(), project.getUpdatedAt());
+                project.getCreatedBy().getFullName(), members.size(), members, project.getCreatedAt(), project.getUpdatedAt(), project.getGithubRepoUrl());
     }
 
     private static String photoData(byte[] photo) {
