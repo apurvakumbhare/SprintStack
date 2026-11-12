@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Download, LoaderCircle, Search, Users } from 'lucide-react'
 import api from '../lib/api'
 import { downloadCsv } from '../lib/csv'
+import ProfileAvatar from '../components/ProfileAvatar'
 
 export default function MembersPage() {
   const [projects, setProjects] = useState([])
@@ -32,7 +33,7 @@ export default function MembersPage() {
     {error && <div className="inline-error" role="alert">{error}</div>}
     {loading ? <div className="loading-state"><LoaderCircle className="spinner" size={18}/> Loading members…</div>
       : visible.length ? <section className="member-directory" aria-label="Project members">{visible.map(member => <article className="directory-member" key={`${member.projectId}-${member.id}`}>
-        <span className="profile-avatar">{member.fullName?.slice(0, 1).toUpperCase()}</span><span className="directory-member-copy"><b>{member.fullName}</b><small>{member.email}</small></span>
+        <ProfileAvatar name={member.fullName} photo={member.profilePhoto}/><span className="directory-member-copy"><b>{member.fullName}</b><small>{member.email}</small></span>
         <span className="member-role">{member.role.replaceAll('_', ' ')}</span><Link className="directory-project" to={`/projects/${member.projectId}`}>{member.projectName}</Link>
       </article>)}</section>
       : <div className="empty-state"><span className="empty-icon"><Users size={22}/></span><h2>{memberships.length ? 'No matching members' : 'No project members yet'}</h2><p>{memberships.length ? 'Try a different name, email, role, or project.' : 'Create a project to start building your team.'}</p>{!memberships.length && <Link className="button button-primary" to="/projects">View projects</Link>}</div>}

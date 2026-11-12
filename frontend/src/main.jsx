@@ -15,6 +15,7 @@ import './analytics.css'
 import './loading.css'
 import './comments.css'
 import './settings.css'
+import './identity-pass.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

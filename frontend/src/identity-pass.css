@@ -1,0 +1,6 @@
+.identity-pass{height:440px;max-width:540px;margin:4px auto 0;overflow:hidden;border-radius:12px;background:#17171d}
+.identity-pass .settings-lanyard{width:100%;height:100%}
+.pass-settings-card{overflow:hidden}
+.avatar-photo{overflow:hidden}
+.avatar-photo img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+@media(max-width:620px){.identity-pass{height:380px}}
