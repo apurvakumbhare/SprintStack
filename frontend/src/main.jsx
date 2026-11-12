@@ -17,6 +17,7 @@ import './comments.css'
 import './settings.css'
 import './identity-pass.css'
 import './github-activity.css'
+import './sidebar-wheel.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

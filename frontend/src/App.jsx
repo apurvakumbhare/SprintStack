@@ -1,8 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Activity, Bell, ChevronDown, CircleHelp, ClipboardCheck, FolderKanban,
-  LayoutDashboard, ListTodo, Search, Settings, ShieldAlert, Users,
+  Activity, Bell, ChevronDown, ClipboardCheck, FolderKanban, ListTodo, Search, Users,
 } from 'lucide-react'
 import api from './lib/api'
 import { APP_NAME } from './lib/branding'
@@ -19,25 +18,49 @@ import NotificationsMenu from './components/NotificationsMenu'
 import ThemeToggle from './components/ThemeToggle'
 import MagicBento from './components/MagicBento'
 import ProfileAvatar from './components/ProfileAvatar'
+import ClickSpark from './components/ClickSpark'
+import OptionWheel from './components/OptionWheel'
 const DashboardCharts = lazy(() => import('./components/DashboardCharts'))
 
 const navigation = [
-  { label: 'Overview', to: '/', icon: LayoutDashboard },
-  { label: 'Projects', to: '/projects', icon: FolderKanban },
-  { label: 'My tasks', to: '/tasks', icon: ListTodo },
-  { label: 'Issues', to: '/issues', icon: ShieldAlert },
-  { label: 'Members', to: '/members', icon: Users },
+  { label: 'Overview', to: '/' },
+  { label: 'Projects', to: '/projects' },
+  { label: 'My tasks', to: '/tasks' },
+  { label: 'Issues', to: '/issues' },
+  { label: 'Members', to: '/members' },
+]
+
+const sidebarOptions = [
+  ...navigation,
+  { label: 'Activity', to: '/activity' },
+  { label: 'Help & support', to: '/help' },
+  { label: 'Settings', to: '/settings' },
 ]
 
 function Sidebar({ user, photo, onLogout }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [wheelOpen, setWheelOpen] = useState(false)
+  const selectedIndex = Math.max(0, sidebarOptions.findIndex(option =>
+    option.to === location.pathname || (option.to === '/projects' && location.pathname.startsWith('/projects/'))
+  ))
+
+  useEffect(() => {
+    if (!wheelOpen) return undefined
+    const closeOnEscape = event => { if (event.key === 'Escape') setWheelOpen(false) }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [wheelOpen])
+
   return <aside className="sidebar">
     <Link className="brand" to="/" aria-label={`${APP_NAME} home`}><span className="brand-mark">{APP_NAME.slice(0,1).toUpperCase()}</span><span>{APP_NAME}</span></Link>
     <div className="workspace"><span className="workspace-avatar">{APP_NAME.slice(0,1).toUpperCase()}</span><span className="workspace-copy"><b>Your workspace</b><small>Getting started</small></span><ChevronDown size={15}/></div>
-    <div className="nav-label">WORKSPACE</div>
-    <nav className="nav-list">{navigation.map(({label,to,icon:Icon})=><NavLink key={to} to={to} end={to==='/'} className={({isActive})=>`nav-item ${isActive?'active':''}`}><Icon size={18}/><span>{label}</span></NavLink>)}</nav>
-    <div className="nav-label team-label">TEAM</div>
-    <NavLink className={({isActive})=>isActive?'nav-item active':'nav-item'} to="/activity"><Activity size={18}/><span>Activity</span></NavLink>
-    <div className="sidebar-bottom"><NavLink className={({isActive})=>isActive?'nav-item active':'nav-item'} to="/help"><CircleHelp size={18}/><span>Help & support</span></NavLink><NavLink className={({isActive})=>isActive?'nav-item active':'nav-item'} to="/settings"><Settings size={18}/><span>Settings</span></NavLink>{user ? <div className="profile"><ProfileAvatar className="profile-avatar" name={user.fullName} photo={photo}/><span className="profile-copy"><b>{user.fullName}</b><small>{user.role?.replaceAll('_',' ')}</small></span><button className="icon-button" aria-label="Sign out" title="Sign out" onClick={onLogout}><ChevronDown size={16}/></button></div> : <div className="profile"><span className="profile-avatar">?</span><span className="profile-copy"><b>Not signed in</b><small>Account setup pending</small></span></div>}</div>
+    <div className="sidebar-wheel-title"><span className="nav-label">NAVIGATION</span><button className="sidebar-wheel-toggle" type="button" aria-expanded={wheelOpen} aria-label={wheelOpen?'Close navigation':'Open navigation'} onClick={()=>setWheelOpen(open=>!open)}>{wheelOpen?'×':'☰'}</button></div>
+    {wheelOpen&&<button className="sidebar-wheel-backdrop" type="button" aria-label="Close navigation" onClick={()=>setWheelOpen(false)}/>}
+    <div className={`sidebar-wheel-panel${wheelOpen?' sidebar-wheel-panel--open':''}`} aria-label="Workspace navigation">
+      <OptionWheel key={selectedIndex} items={sidebarOptions.map(option=>option.label)} defaultSelected={selectedIndex} onChange={index=>{navigate(sidebarOptions[index].to);setWheelOpen(false)}} textColor="#8b91a0" activeColor="#5558d6" side="left" fontSize={1} spacing={1.42} curve={0.9} tilt={6} blur={0.45} fade={0.19} minOpacity={0.16} smoothing={260} inset={22} draggable className="sidebar-option-wheel"/>
+    </div>
+    <div className="sidebar-bottom">{user ? <div className="profile"><ProfileAvatar className="profile-avatar" name={user.fullName} photo={photo}/><span className="profile-copy"><b>{user.fullName}</b><small>{user.role?.replaceAll('_',' ')}</small></span><button className="icon-button" aria-label="Sign out" title="Sign out" onClick={onLogout}><ChevronDown size={16}/></button></div> : <div className="profile"><span className="profile-avatar">?</span><span className="profile-copy"><b>Not signed in</b><small>Account setup pending</small></span></div>}</div>
   </aside>
 }
 
@@ -94,5 +117,5 @@ export default function App() {
   function logout() { sessionStorage.removeItem('sprintstack.token'); sessionStorage.removeItem('sprintstack.email'); setUser(null); setProfilePhoto(null); navigate('/login') }
   function onAuthenticated(nextUser, nextPhoto) { setUser(nextUser); setProfilePhoto(nextPhoto ?? null) }
   function searchTasks(query) { setSearchOpen(false); navigate(`/tasks${query.trim()?`?q=${encodeURIComponent(query.trim())}`:''}`) }
-  return <><Routes><Route path="/login" element={<AuthPage mode="login" onAuthenticated={onAuthenticated}/>}/><Route path="/register" element={<AuthPage mode="register" onAuthenticated={onAuthenticated}/>}/><Route path="*" element={<div className="app-shell"><Sidebar user={user} photo={profilePhoto} onLogout={logout}/><main className="main-area"><header className="topbar"><div className="breadcrumbs"><span>Workspace</span><b>/</b><strong>{currentPage}</strong></div><div className="top-actions"><button className="icon-button search-button" aria-label="Search tasks" onClick={()=>setSearchOpen(true)}><Search size={18}/><span>Search</span><kbd>⌘ K</kbd></button><span className="top-divider"></span><ThemeToggle/><NotificationsMenu user={user}/>{user ? <ProfileAvatar className="top-avatar" name={user.fullName} photo={profilePhoto}/> : <Link className="text-button" to="/login">Sign in</Link>}</div></header><Routes><Route path="/" element={<EmptyDashboard health={health} user={user} summary={summary} summaryError={summaryError}/>}/><Route path="/projects" element={<ProtectedRoute user={user} loading={authLoading}><ProjectsPage/></ProtectedRoute>}/><Route path="/projects/:projectId" element={<ProtectedRoute user={user} loading={authLoading}><ProjectDetailPage/></ProtectedRoute>}/><Route path="/tasks" element={<ProtectedRoute user={user} loading={authLoading}><TasksPage user={user}/></ProtectedRoute>}/><Route path="/issues" element={<ProtectedRoute user={user} loading={authLoading}><IssuesPage user={user}/></ProtectedRoute>}/><Route path="/members" element={<ProtectedRoute user={user} loading={authLoading}><MembersPage/></ProtectedRoute>}/><Route path="/help" element={<HelpPage/>}/><Route path="/activity" element={<ProtectedRoute user={user} loading={authLoading}><ActivityPage/></ProtectedRoute>}/><Route path="/settings" element={<ProtectedRoute user={user} loading={authLoading}><SettingsPage user={user} photo={profilePhoto} onUserUpdated={(nextUser,nextPhoto)=>{setUser(nextUser);if(nextPhoto!==undefined)setProfilePhoto(nextPhoto)}}/></ProtectedRoute>}/></Routes></main></div>}/></Routes>{searchOpen&&<QuickSearch onClose={()=>setSearchOpen(false)} onSearch={searchTasks}/>}</>
+  return <ClickSpark className="app-click-spark" style={{height:"auto",minHeight:"100vh"}} sparkColor="#696cf1" sparkSize={6} sparkRadius={25} sparkCount={7} sparkWidth={1.8} duration={430} shape="star" glow={0.25}><Routes><Route path="/login" element={<AuthPage mode="login" onAuthenticated={onAuthenticated}/>}/><Route path="/register" element={<AuthPage mode="register" onAuthenticated={onAuthenticated}/>}/><Route path="*" element={<div className="app-shell"><Sidebar user={user} photo={profilePhoto} onLogout={logout}/><main className="main-area"><header className="topbar"><div className="breadcrumbs"><span>Workspace</span><b>/</b><strong>{currentPage}</strong></div><div className="top-actions"><button className="icon-button search-button" aria-label="Search tasks" onClick={()=>setSearchOpen(true)}><Search size={18}/><span>Search</span><kbd>⌘ K</kbd></button><span className="top-divider"></span><ThemeToggle/><NotificationsMenu user={user}/>{user ? <ProfileAvatar className="top-avatar" name={user.fullName} photo={profilePhoto}/> : <Link className="text-button" to="/login">Sign in</Link>}</div></header><Routes><Route path="/" element={<EmptyDashboard health={health} user={user} summary={summary} summaryError={summaryError}/>}/><Route path="/projects" element={<ProtectedRoute user={user} loading={authLoading}><ProjectsPage/></ProtectedRoute>}/><Route path="/projects/:projectId" element={<ProtectedRoute user={user} loading={authLoading}><ProjectDetailPage/></ProtectedRoute>}/><Route path="/tasks" element={<ProtectedRoute user={user} loading={authLoading}><TasksPage user={user}/></ProtectedRoute>}/><Route path="/issues" element={<ProtectedRoute user={user} loading={authLoading}><IssuesPage user={user}/></ProtectedRoute>}/><Route path="/members" element={<ProtectedRoute user={user} loading={authLoading}><MembersPage/></ProtectedRoute>}/><Route path="/help" element={<HelpPage/>}/><Route path="/activity" element={<ProtectedRoute user={user} loading={authLoading}><ActivityPage/></ProtectedRoute>}/><Route path="/settings" element={<ProtectedRoute user={user} loading={authLoading}><SettingsPage user={user} photo={profilePhoto} onUserUpdated={(nextUser,nextPhoto)=>{setUser(nextUser);if(nextPhoto!==undefined)setProfilePhoto(nextPhoto)}}/></ProtectedRoute>}/></Routes></main></div>}/></Routes>{searchOpen&&<QuickSearch onClose={()=>setSearchOpen(false)} onSearch={searchTasks}/>}</ClickSpark>
 }
