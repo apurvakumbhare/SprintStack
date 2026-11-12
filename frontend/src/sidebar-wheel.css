@@ -1,33 +1,33 @@
 .sidebar-wheel-title{display:flex;align-items:center;justify-content:space-between;min-height:20px;padding:0 8px 8px}
 .sidebar-wheel-title .nav-label{padding:0;color:#959baa}
 .sidebar-wheel-toggle{display:none;width:34px;height:34px;border:1px solid #e5e7ef;border-radius:9px;background:rgba(255,255,255,.8);color:#6366d9;font:600 19px 'DM Sans';cursor:pointer;align-items:center;justify-content:center}
-.sidebar-wheel-panel{position:relative;isolation:isolate;flex:0 1 clamp(245px,45vh,390px);min-height:230px;margin:0 -5px 8px;overflow:hidden;border:1px solid rgba(223,226,238,.8);border-radius:13px;background:rgba(245,246,252,.66);backdrop-filter:blur(15px) saturate(1.2);-webkit-backdrop-filter:blur(15px) saturate(1.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 7px 22px rgba(53,58,94,.045)}
-.sidebar-option-wheel{width:100%;height:100%;min-height:230px}
+.sidebar-wheel-panel{position:relative;isolation:isolate;flex:0 0 clamp(255px,38vh,320px);min-height:255px;margin:0 0 5px;overflow:visible;border:0;border-radius:0;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
+.sidebar-option-wheel{width:100%;height:100%;min-height:255px}
 .sidebar-option-wheel .option-wheel__item{font-family:Manrope,'DM Sans',sans-serif;font-size:var(--ow-font-size);font-weight:500;letter-spacing:-.35px;transition:color 160ms ease,text-shadow 220ms ease}
 .sidebar-option-wheel .option-wheel__item--selected{text-shadow:0 0 18px rgba(99,102,241,.24);font-weight:750}
 .sidebar-wheel-backdrop{display:none}
 .app-click-spark>span{z-index:50!important}
-.project-tech-title{height:116px;max-width:780px;margin:0 0 8px;overflow:hidden}
-.project-tech-title .tech-text{height:100%;width:100%}
-.project-tech-title .tech-text-canvas{pointer-events:auto}
+.page-tech-title{width:100%;max-width:1190px;height:86px;margin:5px auto 0;padding:0 16px;overflow:hidden}
+.page-tech-title .tech-text{height:100%;width:100%}
+.page-tech-title .tech-text-canvas{pointer-events:auto}
+.main-area>.page-content{padding-top:14px}
 @media(min-width:651px){
   .sidebar-wheel-panel{margin-right:-15px}
   .topbar{padding-left:16px}
   .page-content{padding-left:16px}
 }
-html[data-theme='dark'] .sidebar-wheel-panel{background:rgba(28,31,43,.7);border-color:rgba(68,73,91,.82);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 8px 26px rgba(0,0,0,.2)}
 html[data-theme='dark'] .sidebar-wheel-title .nav-label{color:#a2a8b8}
 html[data-theme='dark'] .sidebar-option-wheel{--ow-text-color:#a1a7b5!important;--ow-active-color:#a3a0ff!important}
 html[data-theme='dark'] .sidebar-wheel-toggle{background:rgba(35,38,51,.9);border-color:#393e50;color:#aaa7ff}
 @media(max-width:650px){
   .sidebar-wheel-title{justify-content:center;padding:0 0 8px}
+  .page-tech-title{height:66px;padding:0 15px;margin-top:0}
   .sidebar-wheel-title .nav-label{display:none}
   .sidebar-wheel-toggle{display:flex}
-  .sidebar-wheel-panel{display:none;position:fixed;z-index:12;left:72px;top:78px;width:min(286px,calc(100vw - 84px));height:min(430px,calc(100dvh - 96px));min-height:245px;margin:0;border-radius:16px;background:rgba(248,249,255,.78);box-shadow:0 24px 70px rgba(22,25,50,.2),inset 0 1px 0 rgba(255,255,255,.85)}
+  .sidebar-wheel-panel{display:none;position:fixed;z-index:12;left:72px;top:78px;width:min(286px,calc(100vw - 84px));height:min(430px,calc(100dvh - 96px));min-height:245px;margin:0;border-radius:16px;background:rgba(248,249,255,.78);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);box-shadow:0 24px 70px rgba(22,25,50,.2),inset 0 1px 0 rgba(255,255,255,.85)}
   .sidebar-wheel-panel.sidebar-wheel-panel--open{display:block}
   .sidebar-option-wheel{min-height:0}
   .sidebar-wheel-backdrop{display:block;position:fixed;z-index:11;inset:0;border:0;background:rgba(25,28,42,.18);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
-  html[data-theme='dark'] .sidebar-wheel-panel{background:rgba(27,30,42,.86);box-shadow:0 24px 70px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)}
-}
+  }
 @media(max-height:610px) and (min-width:651px){.sidebar-wheel-panel{flex-basis:220px;min-height:210px}.sidebar-option-wheel{min-height:210px}.workspace{margin-top:18px;margin-bottom:12px}.sidebar{padding-top:14px;padding-bottom:14px}}
 @media(prefers-reduced-motion:reduce){.sidebar-option-wheel .option-wheel__item{transition:none}}
