@@ -10,6 +10,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.util.Base64;
+import java.util.Optional;
+import javax.imageio.ImageIO;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,5 +55,31 @@ class AuthServiceTest {
                 () -> authService.register(new RegisterRequest("Person", "person@example.com", "strong-pass-1")));
         assertEquals(409, error.getStatusCode().value());
         verify(users, never()).save(any());
+    }
+
+    @Test
+    void profilePhotoIsValidatedNormalizedAndReturnedForTheAuthenticatedAccount() throws Exception {
+        User user = new User("Photo Person", "person@example.com", "already-hashed-password");
+        when(users.findByEmailIgnoreCase("person@example.com")).thenReturn(Optional.of(user));
+        BufferedImage image = new BufferedImage(12, 8, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpeg", bytes);
+        String dataUrl = "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(bytes.toByteArray());
+
+        var saved = authService.updateProfilePhoto("person@example.com", new com.sprintstack.dto.auth.ProfilePhotoRequest(dataUrl));
+
+        assertEquals(dataUrl.substring(0, dataUrl.indexOf(',') + 1), saved.photo().substring(0, saved.photo().indexOf(',') + 1));
+        assertTrue(user.getProfilePhoto().length > 0);
+        assertTrue(ImageIO.read(new java.io.ByteArrayInputStream(user.getProfilePhoto())) != null);
+        assertEquals(saved, authService.profilePhoto("person@example.com"));
+    }
+
+    @Test
+    void profilePhotoRejectsNonJpegData() {
+        User user = new User("Photo Person", "person@example.com", "already-hashed-password");
+        when(users.findByEmailIgnoreCase("person@example.com")).thenReturn(Optional.of(user));
+        var error = assertThrows(ResponseStatusException.class,
+                () -> authService.updateProfilePhoto("person@example.com", new com.sprintstack.dto.auth.ProfilePhotoRequest("data:image/png;base64,aGVsbG8=")));
+        assertEquals(400, error.getStatusCode().value());
     }
 }

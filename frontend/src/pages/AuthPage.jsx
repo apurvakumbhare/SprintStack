@@ -27,10 +27,13 @@ export default function AuthPage({ mode, onAuthenticated }) {
   const [form, setForm] = useState({ fullName: '', email: '', password: '' })
   const [photo, setPhoto] = useState('')
   const [photoName, setPhotoName] = useState('')
+  const [profilePhotoExists, setProfilePhotoExists] = useState(false)
   const [error, setError] = useState('')
   const [photoError, setPhotoError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [verifiedUser, setVerifiedUser] = useState(null)
+  const [profilePhotoLoading, setProfilePhotoLoading] = useState(false)
+  const [profilePhotoSaving, setProfilePhotoSaving] = useState(false)
   const formRef = useRef(null)
 
   useEffect(() => {
@@ -92,9 +95,17 @@ export default function AuthPage({ mode, onAuthenticated }) {
       context.fillStyle = '#fff'
       context.fillRect(0, 0, canvas.width, canvas.height)
       context.drawImage(image, 0, 0, canvas.width, canvas.height)
-      setPhoto(canvas.toDataURL('image/jpeg', 0.84))
+      const photoData = canvas.toDataURL('image/jpeg', 0.84)
+      setPhoto(photoData)
       setPhotoName(file.name)
       URL.revokeObjectURL(imageUrl)
+      if (verifiedUser) {
+        setProfilePhotoSaving(true)
+        api.put('/auth/photo', { photo: photoData })
+          .then(({ data }) => { setPhoto(data.photo); setPhotoName('Saved profile photo'); setProfilePhotoExists(true); setPhotoError('') })
+          .catch(requestError => setPhotoError(requestError.response?.data?.error || 'The photo could not be saved. Choose it again to retry.'))
+          .finally(() => setProfilePhotoSaving(false))
+      }
     }
     image.onerror = () => { URL.revokeObjectURL(imageUrl); setPhotoError('We could not preview that image.') }
     image.src = imageUrl
@@ -110,6 +121,28 @@ export default function AuthPage({ mode, onAuthenticated }) {
       sessionStorage.setItem('sprintstack.email', data.user.email)
       setVerifiedUser(data.user)
       onAuthenticated(data.user)
+      setProfilePhotoLoading(true)
+      try {
+        if (photo) {
+          const { data: savedPhoto } = await api.put('/auth/photo', { photo })
+          setPhoto(savedPhoto.photo)
+          setPhotoName('Saved profile photo')
+          setProfilePhotoExists(true)
+        } else {
+          const { data: savedPhoto } = await api.get('/auth/photo')
+          if (savedPhoto.photo) {
+            setPhoto(savedPhoto.photo)
+            setPhotoName('Saved profile photo')
+            setProfilePhotoExists(true)
+          } else {
+            setProfilePhotoExists(false)
+          }
+        }
+      } catch (photoRequestError) {
+        setPhotoError(photoRequestError.response?.data?.error || 'Your account is verified, but its profile photo could not be loaded or saved.')
+      } finally {
+        setProfilePhotoLoading(false)
+      }
     } catch (requestError) {
       setError(requestError.response?.data?.error || requestError.response?.data?.message || 'We could not sign you in. Check the API connection and try again.')
     } finally {
@@ -131,8 +164,9 @@ export default function AuthPage({ mode, onAuthenticated }) {
           <div className="eyebrow">IDENTITY VERIFIED</div>
           <h1>Your workspace pass is ready</h1>
           <p className="auth-intro">Your details are on your lanyard card. Drag or tap it to turn it over, then continue whenever you’re ready.</p>
-          {photoName&&<p className="auth-photo-note"><Camera size={13}/> {photoName} is shown on this card preview.</p>}
-          <button className="button button-primary auth-submit auth-dashboard-button" onClick={goToDashboard}><Sparkles size={15}/> Go to dashboard</button>
+          <label className="auth-photo-upload"><span><Camera size={14}/> Profile photo <small>{profilePhotoSaving?'Saving to your account…':photoName|| (profilePhotoExists?'Saved securely to your account':'No photo saved yet')}</small></span><span className="auth-photo-button">{photoName?'Change photo':'Choose photo'}<input type="file" accept="image/*" onChange={event=>void choosePhoto(event)} aria-label="Change your profile photo" disabled={profilePhotoSaving}/></span></label>
+          {photoError&&<div className="auth-error" role="alert">{photoError}</div>}
+          <button className="button button-primary auth-submit auth-dashboard-button" onClick={goToDashboard} disabled={profilePhotoLoading||profilePhotoSaving}><Sparkles size={15}/> {profilePhotoLoading?'Preparing your card…':'Go to dashboard'}</button>
         </div> : <>
           <div className="eyebrow">TEAM PROJECTS & PRODUCTIVITY</div>
           <h1>{isRegister ? 'Create your account' : 'Welcome back'}</h1>
@@ -141,7 +175,7 @@ export default function AuthPage({ mode, onAuthenticated }) {
             {isRegister && <label>Full name<input name="fullName" autoComplete="name" value={form.fullName} onChange={update} required maxLength="120" placeholder="Your name"/></label>}
             <label>Email address<input name="email" type="email" autoComplete="email" value={form.email} onChange={update} required maxLength="190" placeholder="you@example.com"/></label>
             <label>Password<input name="password" type="password" autoComplete={isRegister ? 'new-password' : 'current-password'} value={form.password} onChange={update} required minLength={isRegister ? 8 : 1} maxLength="72" placeholder={isRegister ? 'At least 8 characters' : 'Your password'}/></label>
-            <div className="auth-photo-upload"><span><Camera size={14}/> Photo for your pass <small>Optional · stays in this browser preview</small></span><label className="auth-photo-button">{photoName?'Change photo':'Choose photo'}<input type="file" accept="image/*" onChange={event=>void choosePhoto(event)} aria-label="Choose a photo for your pass"/></label></div>
+            <div className="auth-photo-upload"><span><Camera size={14}/> Photo for your pass <small>{photoName||'Optional · saved after successful sign-in'}</small></span><label className="auth-photo-button">{photoName?'Change photo':'Choose photo'}<input type="file" accept="image/*" onChange={event=>void choosePhoto(event)} aria-label="Choose a photo for your pass"/></label></div>
             {photoError&&<div className="auth-error" role="alert">{photoError}</div>}
             {error&&<div className="auth-error" role="alert">{error}</div>}
             <button className="button button-primary auth-submit" disabled={submitting}>{submitting&&<LoaderCircle className="spinner" size={15}/>} {submitting?'Verifying…':isRegister?'Create account':'Sign in'}</button>

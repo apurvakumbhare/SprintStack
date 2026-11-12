@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
 import com.sprintstack.dto.project.ProjectRequest;
 import com.sprintstack.dto.task.TaskRequest;
 import com.sprintstack.dto.issue.IssueRequest;
@@ -48,6 +49,7 @@ class DatabaseMigrationTest {
     @Autowired private IssueService issues;
     @Autowired private CommentService comments;
     @Autowired private NotificationRepository notifications;
+    @Autowired private EntityManager entityManager;
 
     @Test
     void migrationsCreateTheCoreTablesAndVersionHistory() {
@@ -56,7 +58,21 @@ class DatabaseMigrationTest {
         Integer migrations = jdbc.queryForObject("select count(*) from \"flyway_schema_history\" where \"success\" = true", Integer.class);
         assertThat(users).isEqualTo(1);
         assertThat(tasks).isEqualTo(1);
-        assertThat(migrations).isGreaterThanOrEqualTo(2);
+        Integer photoColumn = jdbc.queryForObject("select count(*) from information_schema.columns where table_schema='PUBLIC' and table_name='USERS' and column_name='PROFILE_PHOTO'", Integer.class);
+        assertThat(migrations).isGreaterThanOrEqualTo(3);
+        assertThat(photoColumn).isEqualTo(1);
+    }
+
+    @Test
+    @Transactional
+    void profilePhotoSurvivesLoadingTheUserAgain() {
+        User user = users.saveAndFlush(new User("Photo Owner", "photo-owner@example.test", "already-hashed-password"));
+        byte[] photo = new byte[] { 1, 2, 3, 4, 5 };
+        user.updateProfilePhoto(photo);
+        users.flush();
+        entityManager.clear();
+
+        assertThat(users.findById(user.getId()).orElseThrow().getProfilePhoto()).containsExactly(1, 2, 3, 4, 5);
     }
 
     @Test

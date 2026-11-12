@@ -22,6 +22,14 @@ public class AuthController {
     @GetMapping("/me")
     public UserResponse me(Authentication authentication) { return authService.currentUser(authentication.getName()); }
 
+    @GetMapping("/photo")
+    public ProfilePhotoResponse photo(Authentication authentication) { return authService.profilePhoto(authentication.getName()); }
+
+    @PutMapping("/photo")
+    public ProfilePhotoResponse updatePhoto(Authentication authentication, @Valid @RequestBody ProfilePhotoRequest request) {
+        return authService.updateProfilePhoto(authentication.getName(), request);
+    }
+
     @PatchMapping("/profile")
     public AuthResponse updateProfile(Authentication authentication,@Valid @RequestBody ProfileUpdateRequest request){return authService.updateProfile(authentication.getName(),request);}
 

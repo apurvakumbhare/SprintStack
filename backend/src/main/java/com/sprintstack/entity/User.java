@@ -18,6 +18,10 @@ public class User {
     @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
 
+    @Lob
+    @Column(name = "profile_photo", columnDefinition = "MEDIUMBLOB")
+    private byte[] profilePhoto;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "global_role", nullable = false, length = 30)
     private UserRole globalRole = UserRole.DEVELOPER;
@@ -41,8 +45,10 @@ public class User {
     public String getFullName() { return fullName; }
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
+    public byte[] getProfilePhoto() { return profilePhoto; }
     public UserRole getGlobalRole() { return globalRole; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void updateProfile(String fullName,String email){this.fullName=fullName;this.email=email;}
     public void changePassword(String passwordHash){this.passwordHash=passwordHash;}
+    public void updateProfilePhoto(byte[] profilePhoto){this.profilePhoto=profilePhoto;}
 }
