@@ -2,6 +2,12 @@
 
 SprintStack is a full-stack team productivity app for projects, memberships, tasks, issue tracking, comments, notifications, activity history, and database-backed delivery analytics. The display name is configured separately so it can be changed to KKH later without changing the repository identity.
 
+## Application preview
+
+![SprintStack workspace overview](docs/screenshots/workspace-overview.png)
+
+The overview brings workspace activity, project and task metrics, and delivery analytics together in one place.
+
 ## Stack
 
 - Frontend: React 18, JavaScript, Vite, Tailwind CSS, React Router, Axios, Lucide, Recharts
@@ -50,6 +56,8 @@ Vite reads `VITE_API_URL` and `VITE_APP_NAME` at build time. Put local values in
 - Task CRUD, assignment, status and priority filtering, search, deadline/priority sorting, “mine” and overdue views, Kanban and bulk status updates, labels, effort, comments, and filtered CSV export.
 - Issue reporting with assignment, severity/status/priority filtering, search, issue comments, project issue lists, and filtered CSV export.
 - Project and workspace activity feeds, recent dashboard activity and notifications, database-backed notification links/read actions, and scheduled due-date/overdue reminders.
+- Project owners can connect a GitHub repository; project teammates can view recent repository activity and commits from the project page.
+- Persistent profile photos shared across the app and displayed on the user’s team pass, plus light/dark themes and animated workspace navigation.
 - Keyboard task search (Ctrl/Cmd+K), in-app help, and CSV export for member listings.
 - Dashboard metrics, task-state distribution, project completion, weekly completion, open assigned-task workload, and project-level task/issue/team analytics, all computed from database data.
 - Flyway schema migrations, API validation/error handling, integration and unit tests, and GitHub Actions checks.
@@ -134,7 +142,7 @@ Spring Security → Controllers → Services → JPA repositories
 
 ## Screenshots
 
-Screenshots will be added after the final visual QA pass against the local database-backed application.
+The overview screenshot above shows the workspace dashboard in its empty-project state. Additional screenshots can be added as updated full-page captures become available.
 
 ## CI
 
@@ -144,5 +152,4 @@ GitHub Actions runs the backend test suite and frontend production build on push
 
 - Add email invitations after a delivery provider and sender configuration are selected.
 - Add paginated activity and notification history for larger workspaces.
-- Add optional user avatars and richer profile details.
 - Add deployment configuration after a hosting environment has been chosen.
