@@ -90,6 +90,22 @@ From `frontend/`: `npm ci` then `npm run build`
 
 GitHub Actions runs these checks on pushes and pull requests to `main`.
 
+## Deployment preparation
+
+The repository includes a Dockerfile for the Java API, a port configuration that honors the hosting provider's `PORT`, and a Vercel rewrite for React Router deep links.
+
+One low-cost demo setup is a Render Docker web service, a Vercel static frontend, and an external MySQL 8-compatible database. Render and database free-tier availability and limits can change; check current provider terms before relying on them for anything important.
+
+1. Push the repository to GitHub. Confirm the CI workflow passes before deploying.
+2. Create a Render Web Service from the repository. Set the root directory to `backend`, use the Docker runtime, and use `/api/health` as the health-check path.
+3. Add the backend environment variables in Render. Set `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD` to the hosted database connection details. Set `JWT_SECRET` to a randomly generated secret of at least 32 bytes. Set `FRONTEND_URL` to the exact deployed frontend origin, without a trailing slash. Never commit these values.
+4. Deploy the frontend from the same repository in Vercel. Set the root directory to `frontend`; the build command is `npm run build` and the output directory is `dist`.
+5. In Vercel, configure `VITE_API_URL` as the deployed API origin followed by `/api` (for example, `https://your-api.example.com/api`) and set `VITE_APP_NAME` to `SprintStack`. These variables are applied at build time, so redeploy after changing them.
+6. Copy the Vercel production origin into Render's `FRONTEND_URL`, then restart or redeploy the API so browser requests pass CORS validation.
+7. Confirm `GET https://<api-host>/api/health` reports `UP`; then register, create a project, and refresh a nested route such as `/projects/1`.
+
+The frontend expects an externally reachable API and the backend expects a persistent MySQL-compatible database. A free API host may sleep when idle, so its first request can be slow. Keep uploaded photos in the database-backed profile storage; do not rely on a container's local filesystem for persistent user data.
+
 For manual API checks, import [`postman/team-project-api.postman_collection.json`](postman/team-project-api.postman_collection.json) into Postman. Set the collection’s `email` and `password` variables locally, run Login or Register first, then run the project/task/issue requests in order. The token and created record IDs are saved as collection variables. Do not export or commit real credentials.
 
 ## Problem statement and objectives
@@ -152,4 +168,3 @@ GitHub Actions runs the backend test suite and frontend production build on push
 
 - Add email invitations after a delivery provider and sender configuration are selected.
 - Add paginated activity and notification history for larger workspaces.
-- Add deployment configuration after a hosting environment has been chosen.
